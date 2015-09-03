@@ -23,7 +23,7 @@
   "scripts": {
     "build": "browserify src --transform babelify --outfile index.js",
     "lint": "eslint src",
-    "start": "python -m SimpleHTTPServer & npm run watch",
+    "start": "python -m SimpleHTTPServer",
     "watch": "watchify src --verbose --transform babelify --outfile index.js"
   }
 }
