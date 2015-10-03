@@ -34,21 +34,27 @@ export default class ModelView extends EventEmitter {
     this.tick -= (playbackTime - this.playbackTime);
 
     if (this.tick <= 0) {
+      let phaseTime = CLOCK_INTERVAL / this.model.ants.length;
+
       this.model.update();
       this.viewer.update();
-      this.model.ants.forEach((ant) => {
-        let relay = new RelaySound(this.audioContext, ant.position);
-        let soundPlaybackTime = playbackTime + 0.1 + this.tick;
+      this.model.ants.forEach((ant, index) => {
+        if (ant.updated) {
+          let relay = new RelaySound(this.audioContext, ant.position);
+          let soundPlaybackTime = playbackTime + 0.1 + this.tick;
 
-        relay.start(soundPlaybackTime);
-        relay.on("ended", () => {
-          relay.outlet.disconnect();
-          relay.dispose();
-          removeIfExists(GCGuard, relay);
-        });
-        appendIfNotExists(GCGuard, relay);
+          soundPlaybackTime += phaseTime * index;
 
-        relay.outlet.connect(this.audioContext.destination);
+          relay.start(soundPlaybackTime);
+          relay.on("ended", () => {
+            relay.outlet.disconnect();
+            relay.dispose();
+            removeIfExists(GCGuard, relay);
+          });
+          appendIfNotExists(GCGuard, relay);
+
+          relay.outlet.connect(this.audioContext.destination);
+        }
       });
       this.tick += CLOCK_INTERVAL;
     }

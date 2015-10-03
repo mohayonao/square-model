@@ -147,6 +147,13 @@ module.exports = function(array, target) {
 };
 
 },{}],6:[function(require,module,exports){
+module.exports = function(array, rand) {
+  rand = rand || Math.random;
+
+  return array[(rand() * array.length)|0];
+};
+
+},{}],7:[function(require,module,exports){
 (function (global){
 var getAudioContext = require("./getAudioContext");
 
@@ -190,7 +197,7 @@ module.exports = function(audioContext, callback) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./getAudioContext":8}],7:[function(require,module,exports){
+},{"./getAudioContext":9}],8:[function(require,module,exports){
 (function (global){
 var getAudioContext = require("./getAudioContext");
 
@@ -231,7 +238,7 @@ module.exports = function(path, audioContext) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./getAudioContext":8}],8:[function(require,module,exports){
+},{"./getAudioContext":9}],9:[function(require,module,exports){
 (function (global){
 var audioContext = null;
 
@@ -250,7 +257,7 @@ module.exports = function() {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -333,7 +340,7 @@ var App = (function () {
 exports["default"] = App;
 module.exports = exports["default"];
 
-},{"@mohayonao/utils/appendIfNotExists":2,"@mohayonao/utils/removeIfExists":5,"@mohayonao/web-audio-utils/enableMobileAutoPlay":6}],10:[function(require,module,exports){
+},{"@mohayonao/utils/appendIfNotExists":2,"@mohayonao/utils/removeIfExists":5,"@mohayonao/web-audio-utils/enableMobileAutoPlay":7}],11:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -412,23 +419,33 @@ var ModelView = (function (_EventEmitter) {
       this.tick -= playbackTime - this.playbackTime;
 
       if (this.tick <= 0) {
-        this.model.update();
-        this.viewer.update();
-        this.model.ants.forEach(function (ant) {
-          var relay = new _RelaySound2["default"](_this2.audioContext, ant.position);
-          var soundPlaybackTime = playbackTime + 0.1 + _this2.tick;
+        (function () {
+          var phaseTime = _modelConfig.CLOCK_INTERVAL / _this2.model.ants.length;
 
-          relay.start(soundPlaybackTime);
-          relay.on("ended", function () {
-            relay.outlet.disconnect();
-            relay.dispose();
-            (0, _mohayonaoUtilsRemoveIfExists2["default"])(GCGuard, relay);
+          _this2.model.update();
+          _this2.viewer.update();
+          _this2.model.ants.forEach(function (ant, index) {
+            if (ant.updated) {
+              (function () {
+                var relay = new _RelaySound2["default"](_this2.audioContext, ant.position);
+                var soundPlaybackTime = playbackTime + 0.1 + _this2.tick;
+
+                soundPlaybackTime += phaseTime * index;
+
+                relay.start(soundPlaybackTime);
+                relay.on("ended", function () {
+                  relay.outlet.disconnect();
+                  relay.dispose();
+                  (0, _mohayonaoUtilsRemoveIfExists2["default"])(GCGuard, relay);
+                });
+                (0, _mohayonaoUtilsAppendIfNotExists2["default"])(GCGuard, relay);
+
+                relay.outlet.connect(_this2.audioContext.destination);
+              })();
+            }
           });
-          (0, _mohayonaoUtilsAppendIfNotExists2["default"])(GCGuard, relay);
-
-          relay.outlet.connect(_this2.audioContext.destination);
-        });
-        this.tick += _modelConfig.CLOCK_INTERVAL;
+          _this2.tick += _modelConfig.CLOCK_INTERVAL;
+        })();
       }
 
       this.playbackTime = playbackTime;
@@ -441,7 +458,7 @@ var ModelView = (function (_EventEmitter) {
 exports["default"] = ModelView;
 module.exports = exports["default"];
 
-},{"../model/config":18,"./RelaySound":11,"./Viewer":12,"@mohayonao/event-emitter":1,"@mohayonao/utils/appendIfNotExists":2,"@mohayonao/utils/removeIfExists":5}],11:[function(require,module,exports){
+},{"../model/config":19,"./RelaySound":12,"./Viewer":13,"@mohayonao/event-emitter":1,"@mohayonao/utils/appendIfNotExists":2,"@mohayonao/utils/removeIfExists":5}],12:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -511,7 +528,7 @@ var RelaySound = (function (_EventEmitter) {
 exports["default"] = RelaySound;
 module.exports = exports["default"];
 
-},{"./sounds":14,"@mohayonao/event-emitter":1}],12:[function(require,module,exports){
+},{"./sounds":15,"@mohayonao/event-emitter":1}],13:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -604,7 +621,7 @@ function toColor(r, g, b) {
 }
 module.exports = exports["default"];
 
-},{"../model/config":18,"@mohayonao/utils/linlin":3}],13:[function(require,module,exports){
+},{"../model/config":19,"@mohayonao/utils/linlin":3}],14:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -620,7 +637,7 @@ var _Application2 = _interopRequireDefault(_Application);
 exports["default"] = _Application2["default"];
 module.exports = exports["default"];
 
-},{"./Application":9}],14:[function(require,module,exports){
+},{"./Application":10}],15:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -653,7 +670,7 @@ exports["default"] = {
 };
 module.exports = exports["default"];
 
-},{"@mohayonao/web-audio-utils/fetchAudioBuffer":7,"@mohayonao/web-audio-utils/getAudioContext":8}],15:[function(require,module,exports){
+},{"@mohayonao/web-audio-utils/fetchAudioBuffer":8,"@mohayonao/web-audio-utils/getAudioContext":9}],16:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -662,17 +679,20 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var _mohayonaoUtilsSample = require("@mohayonao/utils/sample");
+
+var _mohayonaoUtilsSample2 = _interopRequireDefault(_mohayonaoUtilsSample);
 
 var _of = require("./of");
 
 var _config = require("./config");
 
-var LEFT = -1;
-var RIGHT = 1;
-
 var Ant = (function () {
-  function Ant(m) {
+  function Ant(model) {
     _classCallCheck(this, Ant);
 
     this.death = false;
@@ -681,73 +701,51 @@ var Ant = (function () {
     this.appetite = _config.APPETITE_INIT;
     this.pool = _config.POOL_INIT;
 
-    this.model = m;
+    this.model = model;
     this.position = (0, _of.ofRandomInt)(this.model.grids.length - 1);
+    this.updated = false;
   }
-
-  //C Functions
 
   _createClass(Ant, [{
     key: "move",
     value: function move() {
-      var leftGrid = edgeCheck(this.position - 1, this.model.grids.length);
-      var rightGrid = edgeCheck(this.position + 1, this.model.grids.length);
+      var _this = this;
 
-      // Avoid now position by edgeLimitter
-      if (leftGrid === this.position) {
-        this.moveWithDirection(RIGHT);
+      if (!(Math.random() < _config.MOVE_RATE)) {
         return;
       }
 
-      if (rightGrid === this.position) {
-        this.moveWithDirection(LEFT);
-        return;
-      }
+      var grids = this.model.grids.filter(function (grid) {
+        var minPosition = _this.position - _config.VIEW_WIDTH;
+        var maxPosition = _this.position + _config.VIEW_WIDTH;
 
-      var left = this.model.grids[leftGrid];
-      var right = this.model.grids[rightGrid];
+        return minPosition <= grid.index && grid.index <= maxPosition;
+      });
+      var maxResource = grids.reduce(function (maxValue, grid) {
+        return Math.max(maxValue, grid.resource);
+      }, 0);
+      var candidates = grids.filter(function (grid) {
+        return grid.resource === maxResource;
+      });
 
-      if (left.resource > right.resource) {
-        this.moveWithDirection(LEFT);
-      } else if (left.resource < right.resource) {
-        this.moveWithDirection(RIGHT);
-      } else {
-        // If left and right is same
-        var dice = (0, _of.ofRandomInt)(1);
+      if (candidates.length) {
+        var position = (0, _mohayonaoUtilsSample2["default"])(candidates).index;
 
-        if (dice) {
-          this.moveWithDirection(LEFT);
-        } else {
-          this.moveWithDirection(RIGHT);
+        if (position !== this.position) {
+          this.position = position;
+          this.updated = true;
         }
       }
-
-      // Move Limitter
-      // REVIEW: why 2 times call??
-      this.position = edgeCheck(this.position, this.model.grids.length);
-    }
-  }, {
-    key: "moveWithDirection",
-    value: function moveWithDirection(d) {
-      if (d === LEFT) {
-        this.position--;
-      }
-      if (d === RIGHT) {
-        this.position++;
-      }
-      this.position = edgeCheck(this.position, this.model.grids.length);
     }
   }, {
     key: "eat",
     value: function eat() {
-      if (this.model.grids[this.position].resource >= this.take) {
-        this.pool += this.take;
-      } else {
-        this.pool += this.model.grids[this.position].resource;
-      }
-      this.model.grids[this.position].decrease(this.take);
+      var take = Math.min(this.model.grids[this.position].resource, this.take);
 
+      this.pool += take;
       this.pool -= this.appetite;
+
+      this.model.grids[this.position].decrease(take);
     }
   }]);
 
@@ -755,20 +753,9 @@ var Ant = (function () {
 })();
 
 exports["default"] = Ant;
-function edgeCheck(position, gridNum) {
-  var posi = position;
-
-  if (position >= gridNum) {
-    posi = gridNum - 1;
-  } else if (position < 0) {
-    posi = 0;
-  }
-
-  return posi;
-}
 module.exports = exports["default"];
 
-},{"./config":18,"./of":19}],16:[function(require,module,exports){
+},{"./config":19,"./of":20,"@mohayonao/utils/sample":6}],17:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -784,27 +771,22 @@ var _config = require("./config");
 var _of = require("./of");
 
 var Grid = (function () {
-  function Grid() {
+  function Grid(index) {
     _classCallCheck(this, Grid);
 
+    this.index = index;
     this.resource = (0, _of.ofRandomInt)(_config.SUGAR_INIT + 1);
   }
 
   _createClass(Grid, [{
     key: "decrease",
     value: function decrease(num) {
-      this.resource -= num;
-      if (this.resource < 0) {
-        this.resource = 0;
-      }
+      this.resource = Math.max(0, this.resource - num);
     }
   }, {
     key: "recovery",
     value: function recovery() {
-      this.resource += _config.SUGAR_RECOVERY_NUM;
-      if (this.resource > _config.SUGAR_INIT) {
-        this.resource = _config.SUGAR_INIT;
-      }
+      this.resource = Math.min(this.resource + _config.SUGAR_RECOVERY_NUM, _config.SUGAR_INIT);
     }
   }]);
 
@@ -814,7 +796,7 @@ var Grid = (function () {
 exports["default"] = Grid;
 module.exports = exports["default"];
 
-},{"./config":18,"./of":19}],17:[function(require,module,exports){
+},{"./config":19,"./of":20}],18:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -847,8 +829,8 @@ var Model = (function () {
 
     _classCallCheck(this, Model);
 
-    this.grids = (0, _mohayonaoUtilsRange2["default"])(_config.GRID_NUM_INIT).map(function () {
-      return new _Grid2["default"]();
+    this.grids = (0, _mohayonaoUtilsRange2["default"])(_config.GRID_NUM_INIT).map(function (index) {
+      return new _Grid2["default"](index);
     });
     this.ants = (0, _mohayonaoUtilsRange2["default"])(_config.ANT_NUM_INIT).map(function () {
       return new _Ant2["default"](_this);
@@ -866,6 +848,7 @@ var Model = (function () {
     key: "behaveAnts",
     value: function behaveAnts() {
       this.ants.forEach(function (ant) {
+        ant.updated = false;
         ant.move();
         ant.eat();
       });
@@ -913,7 +896,7 @@ var Model = (function () {
 exports["default"] = Model;
 module.exports = exports["default"];
 
-},{"./Ant":15,"./Grid":16,"./config":18,"@mohayonao/utils/range":4}],18:[function(require,module,exports){
+},{"./Ant":16,"./Grid":17,"./config":19,"@mohayonao/utils/range":4}],19:[function(require,module,exports){
 // System
 "use strict";
 
@@ -930,10 +913,12 @@ var SUGAR_INIT = 10;
 var SUGAR_RECOVERY_NUM = 2;
 
 // ANT PARAM
+var VIEW_WIDTH = 2;
 var VIEW_INIT = 1;
 var POOL_INIT = 4;
 var TAKE_INIT = 8;
 var APPETITE_INIT = 4;
+var MOVE_RATE = 0.7;
 
 // Dead or Arrive
 var BORN_LINE_OF_POOL = POOL_INIT * 100;
@@ -946,16 +931,18 @@ exports["default"] = {
   ANT_NUM_INIT: ANT_NUM_INIT,
   SUGAR_INIT: SUGAR_INIT,
   SUGAR_RECOVERY_NUM: SUGAR_RECOVERY_NUM,
+  VIEW_WIDTH: VIEW_WIDTH,
   VIEW_INIT: VIEW_INIT,
   POOL_INIT: POOL_INIT,
   TAKE_INIT: TAKE_INIT,
   APPETITE_INIT: APPETITE_INIT,
+  MOVE_RATE: MOVE_RATE,
   BORN_LINE_OF_POOL: BORN_LINE_OF_POOL,
   DEATH_LINE_OF_POOL: DEATH_LINE_OF_POOL
 };
 module.exports = exports["default"];
 
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -967,7 +954,7 @@ function ofRandomInt(num) {
   return Math.random() * (num + 1) | 0;
 }
 
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -1041,4 +1028,4 @@ exports["default"] = {};
 module.exports = exports["default"];
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./app":13,"./app/ModelView":10,"./model/Model":17,"@mohayonao/web-audio-utils/enableMobileAutoPlay":6,"@mohayonao/web-audio-utils/getAudioContext":8}]},{},[20]);
+},{"./app":14,"./app/ModelView":11,"./model/Model":18,"@mohayonao/web-audio-utils/enableMobileAutoPlay":7,"@mohayonao/web-audio-utils/getAudioContext":9}]},{},[21]);

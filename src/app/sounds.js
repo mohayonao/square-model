@@ -13,7 +13,7 @@ let sounds = [];
   "06.wav",
   "07.wav",
   "08.wav",
-  "09.wav",
+  "09.wav"
 ].forEach((filename, index) => {
   fetchAudioBuffer(`./assets/sounds/${filename}`, audioContext).then((audioBuffer) => {
     sounds[index] = audioBuffer;

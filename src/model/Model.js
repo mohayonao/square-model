@@ -5,7 +5,7 @@ import Ant from "./Ant";
 
 export default class Model {
   constructor() {
-    this.grids = range(GRID_NUM_INIT).map(() => new Grid());
+    this.grids = range(GRID_NUM_INIT).map((index) => new Grid(index));
     this.ants = range(ANT_NUM_INIT).map(() => new Ant(this));
   }
 
@@ -17,6 +17,7 @@ export default class Model {
 
   behaveAnts() {
     this.ants.forEach((ant) => {
+      ant.updated = false;
       ant.move();
       ant.eat();
     });
