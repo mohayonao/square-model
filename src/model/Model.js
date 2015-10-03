@@ -1,5 +1,5 @@
 import range from "@mohayonao/utils/range";
-import { GRID_NUM_INIT, ANT_NUM_INIT, BORN_LINE_OF_POOL, DEARH_LINE_OF_POOL } from "./config";
+import { GRID_NUM_INIT, ANT_NUM_INIT, BORN_LINE_OF_POOL, DEATH_LINE_OF_POOL } from "./config";
 import Grid from "./Grid";
 import Ant from "./Ant";
 
@@ -42,7 +42,7 @@ export default class Model {
         // Notification the born event to square for changing clock time
         // let num = this.ants.length;
         // notice.notify("BORN", num);
-      } else if (ant.pool <= DEARH_LINE_OF_POOL) {
+      } else if (ant.pool <= DEATH_LINE_OF_POOL) {
         ant.death = true;
       }
     });

@@ -1,28 +1,7 @@
 import getAudioContext from "@mohayonao/web-audio-utils/getAudioContext";
+import fetchAudioBuffer from "@mohayonao/web-audio-utils/fetchAudioBuffer";
 
-function fetch(url) {
-  return new Promise((resolve, reject) => {
-    let xhr = new XMLHttpRequest();
-
-    xhr.open("GET", url);
-    xhr.responseType = "arraybuffer";
-
-    xhr.onload = () => {
-      resolve({
-        text() {
-          return xhr.response;
-        },
-        arrayBuffer() {
-          return xhr.response;
-        }
-      });
-    };
-
-    xhr.onerror = reject;
-    xhr.send();
-  });
-}
-
+let audioContext = getAudioContext();
 let sounds = [];
 
 [
@@ -34,15 +13,9 @@ let sounds = [];
   "06.wav",
   "07.wav",
   "08.wav",
-  "09.wav"
+  "09.wav",
 ].forEach((filename, index) => {
-  fetch(`./sounds/${filename}`).then((res) => {
-    return res.arrayBuffer();
-  }).then((arrayBuffer) => {
-    return new Promise((resolve, reject) => {
-      getAudioContext().decodeAudioData(arrayBuffer, resolve, reject);
-    });
-  }).then((audioBuffer) => {
+  fetchAudioBuffer(`./assets/sounds/${filename}`, audioContext).then((audioBuffer) => {
     sounds[index] = audioBuffer;
   });
 });

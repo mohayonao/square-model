@@ -16,7 +16,7 @@ const APPETITE_INIT = 4;
 
 // Dead or Arrive
 const BORN_LINE_OF_POOL = POOL_INIT * 100;
-const DEARH_LINE_OF_POOL = 0;
+const DEATH_LINE_OF_POOL = 0;
 
 export default {
   CLOCK_INTERVAL,
@@ -30,5 +30,5 @@ export default {
   TAKE_INIT,
   APPETITE_INIT,
   BORN_LINE_OF_POOL,
-  DEARH_LINE_OF_POOL
+  DEATH_LINE_OF_POOL
 };

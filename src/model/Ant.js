@@ -1,7 +1,8 @@
 import { ofRandomInt } from "./of";
 import { VIEW_INIT, TAKE_INIT, APPETITE_INIT, POOL_INIT } from "./config";
 
-const LEFT = -1, RIGHT = 1;
+const LEFT = -1;
+const RIGHT = 1;
 
 export default class Ant {
   constructor(m) {
@@ -16,22 +17,22 @@ export default class Ant {
   }
 
   move() {
-    let left_grid = edgeCheck(this.position - 1, this.model.grids.length);
-    let right_grid = edgeCheck(this.position + 1, this.model.grids.length);
+    let leftGrid = edgeCheck(this.position - 1, this.model.grids.length);
+    let rightGrid = edgeCheck(this.position + 1, this.model.grids.length);
 
     // Avoid now position by edgeLimitter
-    if (left_grid === this.position) {
+    if (leftGrid === this.position) {
       this.moveWithDirection(RIGHT);
       return;
     }
 
-    if (right_grid === this.position) {
+    if (rightGrid === this.position) {
       this.moveWithDirection(LEFT);
       return;
     }
 
-    let left = this.model.grids[left_grid];
-    let right = this.model.grids[right_grid];
+    let left = this.model.grids[leftGrid];
+    let right = this.model.grids[rightGrid];
 
     if (left.resource > right.resource) {
       this.moveWithDirection(LEFT);
@@ -39,8 +40,7 @@ export default class Ant {
       this.moveWithDirection(RIGHT);
     } else {
       // If left and right is same
-      // REVIEW: 2 ??
-      let dice = ofRandomInt(2);
+      let dice = ofRandomInt(1);
 
       if (dice) {
         this.moveWithDirection(LEFT);
@@ -77,11 +77,11 @@ export default class Ant {
 }
 
 //C Functions
-function edgeCheck(position, grid_num) {
+function edgeCheck(position, gridNum) {
   let posi = position;
 
-  if (position >= grid_num) {
-    posi = grid_num - 1;
+  if (position >= gridNum) {
+    posi = gridNum - 1;
   } else if (position < 0) {
     posi = 0;
   }
