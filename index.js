@@ -731,7 +731,7 @@ var ModelView = (function (_EventEmitter) {
       this.model.update();
       this.viewer.update();
       this.model.ants.forEach(function (ant, index) {
-        if (ant.updated && ant.mobile) {
+        if (ant.updated && !ant.mobile) {
           (function () {
             var grid = _this2.model.grids[ant.position];
             var relay = new _RelaySound2["default"](_this2.audioContext, grid.index);
@@ -1217,7 +1217,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 var RESET_INTERVAL = 120;
-var CLOCK_INTERVAL = 0.5;
+var CLOCK_INTERVAL = 1.5;
 var CLOCK_INCREASING_FIX = 1.8;
 var GRID_NUM_INIT = 9;
 var ANT_NUM_INIT = 1;

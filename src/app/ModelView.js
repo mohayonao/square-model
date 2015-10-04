@@ -34,7 +34,7 @@ export default class ModelView extends EventEmitter {
     this.model.update();
     this.viewer.update();
     this.model.ants.forEach((ant, index) => {
-      if (ant.updated && ant.mobile) {
+      if (ant.updated && !ant.mobile) {
         let grid = this.model.grids[ant.position];
         let relay = new RelaySound(this.audioContext, grid.index);
         let soundPlaybackTime = playbackTime;

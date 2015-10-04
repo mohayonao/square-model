@@ -1,6 +1,6 @@
 // System
 const RESET_INTERVAL = 120;
-const CLOCK_INTERVAL = 0.5;
+const CLOCK_INTERVAL = 1.5;
 const CLOCK_INCREASING_FIX = 1.8;
 const GRID_NUM_INIT = 9;
 const ANT_NUM_INIT = 1;
