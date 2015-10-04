@@ -1,26 +1,29 @@
 // System
+const RESET_INTERVAL = 120;
 const CLOCK_INTERVAL = 0.5;
 const CLOCK_INCREASING_FIX = 1.8;
-const GRID_NUM_INIT = 8;
+const GRID_NUM_INIT = 9;
 const ANT_NUM_INIT = 1;
 
 // GRID Richness
-const SUGAR_INIT = 10;
-const SUGAR_RECOVERY_NUM = 2;
+const SUGAR_INIT = 32;
+const SUGAR_RECOVERY_NUM = 5;
 
 // ANT PARAM
-const VIEW_WIDTH = 2;
+const VIEW_WIDTH = 3;
 const VIEW_INIT = 1;
 const POOL_INIT = 4;
-const TAKE_INIT = 8;
-const APPETITE_INIT = 4;
+const TAKE_INIT = 9;
+const APPETITE_INIT = 5;
 const MOVE_RATE = 0.7;
+const MOBILE_RATE = 0.2;
 
 // Dead or Arrive
 const BORN_LINE_OF_POOL = POOL_INIT * 100;
 const DEATH_LINE_OF_POOL = 0;
 
 export default {
+  RESET_INTERVAL,
   CLOCK_INTERVAL,
   CLOCK_INCREASING_FIX,
   GRID_NUM_INIT,
@@ -33,6 +36,7 @@ export default {
   TAKE_INIT,
   APPETITE_INIT,
   MOVE_RATE,
+  MOBILE_RATE,
   BORN_LINE_OF_POOL,
   DEATH_LINE_OF_POOL
 };

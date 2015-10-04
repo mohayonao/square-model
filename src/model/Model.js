@@ -5,19 +5,20 @@ import Ant from "./Ant";
 
 export default class Model {
   constructor() {
-    this.grids = range(GRID_NUM_INIT).map((index) => new Grid(index));
+    this.grids = range(GRID_NUM_INIT).map((index) => new Grid(this, index));
     this.ants = range(ANT_NUM_INIT).map(() => new Ant(this));
   }
 
   update() {
-    this.behaveAnts();
     this.gridsRecovery();
+    this.behaveAnts();
     this.bornAndDeath();
   }
 
   behaveAnts() {
     this.ants.forEach((ant) => {
       ant.updated = false;
+      ant.mobile = false;
       ant.move();
       ant.eat();
     });
@@ -33,7 +34,7 @@ export default class Model {
     this.ants.forEach((ant) => {
       if (ant.pool >= BORN_LINE_OF_POOL) {
         // Decreases it's pool
-        ant.pool >>= 1; // * 0.5
+        ant.pool >>= 1;
 
         let a = new Ant(this);
 
@@ -50,5 +51,9 @@ export default class Model {
 
     // Remove flg agents
     this.ants = this.ants.filter(ant => !ant.death);
+
+    if (this.ants.length === 0) {
+      this.ants.push(new Ant(this));
+    }
   }
 }

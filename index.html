@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <title>square-model</title>
-  <link href="//fonts.googleapis.com/css?family=Roboto:300" rel="stylesheet" type="text/css">
+  <!-- <link href="//fonts.googleapis.com/css?family=Roboto:300" rel="stylesheet" type="text/css"> -->
   <link rel="stylesheet" type="text/css" href="./assets/bootstrap.min.css">
   <style>
     * { font-family: "Roboto", sans-serif; user-select: none; -moz-user-select: none; -webkit-user-select: none; -ms-user-select: none; }
     h1 { font-weight: normal; }
-    canvas { margin: 10px; width: 240px; height: 240px; background: #e0e0e0; }
+    canvas { margin: 10px; width: 480px; height: 480px; background: #e0e0e0; }
     .note { margin-left:10px; }
     .btn { width: 125px; }
   </style>
@@ -18,10 +18,11 @@
     <h1>square model</h1>
     <div>
       <button class="btn {{ isPlaying ? 'btn-success' : 'btn-default' }}" v-on="click:soundOn">{{ isPlaying ? "SOUND ON" : "SOUND OFF" }}</button>
-      <button class="btn btn-default" v-on="click:addModel">ADD MODEL</button>
-      <span class="note">remove model: double click</span>
     </div>
     <div id="models"></div>
+    <div>
+      <span>time: {{ elapsed }}</span>
+    </div>
   </div>
   <script src="./assets/vue.min.js"></script>
   <script src="./index.js"></script>

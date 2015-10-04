@@ -15,7 +15,7 @@ export default class ModelView extends EventEmitter {
     this.tick = 0;
     this.playbackTime = 0;
     this.model = model;
-    this.viewer = new Viewer(this.model);
+    this.viewer = new Viewer(this);
 
     document.getElementById("models").appendChild(this.viewer.canvas);
 
@@ -29,36 +29,28 @@ export default class ModelView extends EventEmitter {
   }
 
   update(playbackTime) {
-    this.playbackTime = this.playbackTime || playbackTime;
+    let phaseTime = CLOCK_INTERVAL / this.model.ants.length;
 
-    this.tick -= (playbackTime - this.playbackTime);
+    this.model.update();
+    this.viewer.update();
+    this.model.ants.forEach((ant, index) => {
+      if (ant.updated && ant.mobile) {
+        let grid = this.model.grids[ant.position];
+        let relay = new RelaySound(this.audioContext, grid.index);
+        let soundPlaybackTime = playbackTime;
 
-    if (this.tick <= 0) {
-      let phaseTime = CLOCK_INTERVAL / this.model.ants.length;
+        soundPlaybackTime += phaseTime * index;
 
-      this.model.update();
-      this.viewer.update();
-      this.model.ants.forEach((ant, index) => {
-        if (ant.updated) {
-          let relay = new RelaySound(this.audioContext, ant.position);
-          let soundPlaybackTime = playbackTime + 0.1 + this.tick;
+        relay.start(soundPlaybackTime);
+        relay.on("ended", () => {
+          relay.outlet.disconnect();
+          relay.dispose();
+          removeIfExists(GCGuard, relay);
+        });
+        appendIfNotExists(GCGuard, relay);
 
-          soundPlaybackTime += phaseTime * index;
-
-          relay.start(soundPlaybackTime);
-          relay.on("ended", () => {
-            relay.outlet.disconnect();
-            relay.dispose();
-            removeIfExists(GCGuard, relay);
-          });
-          appendIfNotExists(GCGuard, relay);
-
-          relay.outlet.connect(this.audioContext.destination);
-        }
-      });
-      this.tick += CLOCK_INTERVAL;
-    }
-
-    this.playbackTime = playbackTime;
+        relay.outlet.connect(this.audioContext.destination);
+      }
+    });
   }
 }

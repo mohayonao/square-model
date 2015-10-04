@@ -2,7 +2,8 @@ import { SUGAR_INIT, SUGAR_RECOVERY_NUM } from "./config";
 import { ofRandomInt } from "./of";
 
 export default class Grid {
-  constructor(index) {
+  constructor(model, index) {
+    this.model = model;
     this.index = index;
     this.resource = ofRandomInt(SUGAR_INIT + 1);
   }

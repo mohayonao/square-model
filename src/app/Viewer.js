@@ -1,18 +1,19 @@
 import linlin from "@mohayonao/utils/linlin";
-import { SUGAR_INIT } from "../model/config";
+import { SUGAR_INIT, SUGAR_RECOVERY_NUM } from "../model/config";
 
 export default class Viewer {
-  constructor(model) {
-    this.model = model;
+  constructor(modelView) {
+    this.modelView = modelView;
     this.canvas = document.createElement("canvas");
-    this.canvas.width = 240;
-    this.canvas.height = 240;
+    this.canvas.width = 480;
+    this.canvas.height = 480;
     this.context = this.canvas.getContext("2d");
     this.context.font = "400 12px 'Courier', monospace";
   }
 
   update() {
-    let { model, canvas, context } = this;
+    let { modelView, canvas, context } = this;
+    let { model } = modelView;
 
     context.fillStyle = "#000";
     context.fillRect(0, 0, canvas.width, canvas.height);
@@ -23,18 +24,17 @@ export default class Viewer {
       let dy = 64;
       let x0 = dx * index;
       let y0 = 0;
-      let gray = linlin(grid.resource, 0, SUGAR_INIT, 32, 255)|0;
-      let str = `${grid.resource}`;
+      let gray = linlin(grid.resource, 0, SUGAR_INIT, 255, 32)|0;
+      let str = `${grid.resource|0}`;
       let mx = context.measureText(str).width * 0.5;
-      let fontColor = "#fff";
+      let fontColor = "#000";
 
       context.fillStyle = toColor(gray, gray, gray);
       context.fillRect(x0, y0, dx, dy);
 
-      if (192 <= gray) {
-        fontColor = "#000";
+      if (gray < 192) {
+        fontColor = "#fff";
       }
-
       context.fillStyle = fontColor;
       context.fillText(str, x0 + dx * 0.5 - mx, y0 + dy * 0.5);
     });
@@ -45,13 +45,15 @@ export default class Viewer {
       let dy = (canvas.height - 64) / model.ants.length;
       let x0 = dx * ant.position;
       let y0 = dy * index + 64;
-      let str = `${ant.pool}`;
+      let str = `${ant.pool|0}`;
       let mx = context.measureText(str).width * 0.5;
 
-      context.fillStyle = "#00ff00";
-      context.fillRect(x0, y0, dx, dy);
+      if (ant.mobile) {
+        context.fillStyle = "#ff6666";
+      } else {
+        context.fillStyle = "#ffffff";
+      }
 
-      context.fillStyle = "#ff00ff";
       context.fillText(str, x0 + dx * 0.5 - mx, y0 + dy * 0.5);
     });
   }

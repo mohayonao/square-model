@@ -1,6 +1,6 @@
 import sample from "@mohayonao/utils/sample";
 import { ofRandomInt } from "./of";
-import { VIEW_WIDTH, VIEW_INIT, TAKE_INIT, APPETITE_INIT, POOL_INIT, MOVE_RATE } from "./config";
+import { VIEW_WIDTH, VIEW_INIT, TAKE_INIT, APPETITE_INIT, POOL_INIT, MOVE_RATE, MOBILE_RATE } from "./config";
 
 export default class Ant {
   constructor(model) {
@@ -13,6 +13,7 @@ export default class Ant {
     this.model = model;
     this.position = ofRandomInt(this.model.grids.length - 1);
     this.updated = false;
+    this.mobile = false;
   }
 
   move() {
@@ -20,21 +21,23 @@ export default class Ant {
       return;
     }
 
-    let grids = this.model.grids.filter((grid) => {
+    let grids = this.model.grids.filter((grid, index) => {
       let minPosition = this.position - VIEW_WIDTH;
       let maxPosition = this.position + VIEW_WIDTH;
 
-      return minPosition <= grid.index && grid.index <= maxPosition;
+      return minPosition <= index && index <= maxPosition;
     });
     let maxResource = grids.reduce((maxValue, grid) => Math.max(maxValue, grid.resource), 0);
     let candidates = grids.filter(grid => grid.resource === maxResource);
 
     if (candidates.length) {
       let position = sample(candidates).index;
-
       if (position !== this.position) {
         this.position = position;
         this.updated = true;
+        if (Math.random() < MOBILE_RATE) {
+          this.mobile = true;
+        }
       }
     }
   }

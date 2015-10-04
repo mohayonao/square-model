@@ -10,36 +10,41 @@ global.onload = () => {
 
   enableMobileAutoPlay(audioContext);
 
+  let timerId = 0;
+  let startTime = 0;
   let vue = new global.Vue({
     el: "#app",
     data: {
-      isPlaying: false
+      isPlaying: false,
+      elapsed: "",
     },
     methods: {
       soundOn() {
         this.isPlaying = !this.isPlaying;
         if (this.isPlaying) {
           app.start();
+          startTime = Date.now();
+          timerId = setInterval(() => {
+            let elapsed = Date.now() - startTime;
+            let msec = elapsed % 1000;
+            let seconds = Math.floor(elapsed / 1000) % 60;
+            let minutes = Math.floor(elapsed / 1000 / 60);
+
+            this.elapsed = `${minutes}:${seconds}.${msec}`;
+          }, 250);
         } else {
           app.stop();
+          clearInterval(timerId);
         }
       },
-      addModel() {
-        let model = new ModelView(audioContext, new Model());
-
-        model.on("remove", () => {
-          this.removeModel(model);
-        });
-
-        app.addModel(model);
+      addMobile() {
+        app.addMobile();
       },
-      removeModel(model) {
-        app.removeModel(model);
+      removeMobile() {
+        app.removeMobile();
       }
     }
   });
-
-  vue.addModel();
 };
 
 export default {};

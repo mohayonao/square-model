@@ -1,10 +1,12 @@
 {
   "name": "square-model",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "dependencies": {
     "@mohayonao/event-emitter": "^1.0.1",
+    "@mohayonao/timeline": "^0.3.0",
     "@mohayonao/utils": "^0.3.0",
-    "@mohayonao/web-audio-utils": "^0.7.0"
+    "@mohayonao/web-audio-utils": "^0.7.0",
+    "worker-timer": "^0.1.1"
   },
   "devDependencies": {
     "babel": "^5.8.23",
