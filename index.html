@@ -8,20 +8,99 @@
   <style>
     * { font-family: "Roboto", sans-serif; user-select: none; -moz-user-select: none; -webkit-user-select: none; -ms-user-select: none; }
     h1 { font-weight: normal; }
-    canvas { margin: 10px; width: 480px; height: 480px; background: #e0e0e0; }
-    .note { margin-left:10px; }
-    .btn { width: 125px; }
+    input[type="range"] { height: 16px }
+    textarea { font-family: 'Courier', monospace }
+    #frame { width: 100%; width: 400px; height: 600px; background: #000 }
+    #model { width: 480px; height: 480px; background: #000 }
+    .nav-tabs { margin-bottom: 10px }
   </style>
 </head>
 <body>
   <div id="app" class="container">
     <h1>square model</h1>
-    <div>
-      <button class="btn {{ isPlaying ? 'btn-success' : 'btn-default' }}" v-on="click:soundOn">{{ isPlaying ? "SOUND ON" : "SOUND OFF" }}</button>
-    </div>
-    <div id="models"></div>
-    <div>
-      <span>time: {{ elapsed }}</span>
+    <ul class="nav nav-tabs">
+      <li v-class="active: tabId === 'tab1'" v-on="click:changeTab('tab1')"><a href="javascript:void(0)">PREVIEW</a></li>
+      <li v-class="active: tabId === 'tab2'" v-on="click:changeTab('tab2')"><a href="javascript:void(0)">CONFIG</a></li>
+      <li v-class="active: tabId === 'tab3'" v-on="click:changeTab('tab3')"><a href="javascript:void(0)">EXPORT</a></li>
+    </ul>
+    <div class="row">
+      <div class="col-md-7">
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div v-if="tabId === 'tab1'">
+
+              <div class="row">
+                <div class="col-md-2">
+                  <div class="btn btn-default" v-class="btn-success: isPlaying" v-on="click:start">
+                    start
+                  </div>
+                  <div class="checkbox">
+                    <label><input type="checkbox" v-model="relays" v-on="change:updateState"> relays</label>
+                  </div>
+                  <div class="checkbox">
+                    <label><input type="checkbox" v-model="mobile" v-on="change:updateState"> mobile</label>
+                  </div>
+                  <div class="checkbox">
+                    <label><input type="checkbox" v-model="antiQuantize" v-on="change:updateState"> anti quantize</label>
+                  </div>
+                </div>
+                <div class="col-md-10">
+                  <canvas id="model"></canvas>
+                </div>
+              </div>
+
+            </div>
+            <div v-if="tabId === 'tab2'">
+
+              <div class="form-group">
+                <label>ITER_COUNT: </label> {{ ITER_COUNT }} / {{ (300 / ITER_COUNT).toFixed(1) }}msec
+                <input type="range" min="100" max="1000" step="5" class="form-control" v-model="ITER_COUNT" v-on="input:updateConfig">
+              </div>
+              <div class="form-group">
+                <label>SUGAR_INIT:</label> {{ SUGAR_INIT }}
+                <input type="range" min="1" max="512" class="form-control" v-model="SUGAR_INIT" v-on="input:updateConfig">
+              </div>
+              <div class="form-group">
+                <label>SUGAR_RECOVERY_NUM:</label> {{ SUGAR_RECOVERY_NUM }}
+                <input type="range" min="1" max="32" class="form-control" v-model="SUGAR_RECOVERY_NUM" v-on="input:updateConfig">
+              </div>
+              <div class="form-group">
+                <label>TAKE_INIT:</label> {{ TAKE_INIT }}
+                <input type="range" min="1" max="32" class="form-control" v-model="TAKE_INIT" v-on="input:updateConfig">
+              </div>
+              <div class="form-group">
+                <label>APPETITE_INIT:</label> {{ APPETITE_INIT }}
+                <input type="range" min="1" max="32" class="form-control" v-model="APPETITE_INIT" v-on="input:updateConfig">
+              </div>
+              <div class="form-group">
+                <label>BORN_LINE_OF_POOL:</label> {{ BORN_LINE_OF_POOL }}
+                <input type="range" min="100" max="2000" step="5" class="form-control" v-model="BORN_LINE_OF_POOL" v-on="input:updateConfig">
+              </div>
+              <div class="form-group">
+                <label>MOVE_RATE:</label> {{ MOVE_RATE }}%
+                <input type="range" min="0" max="100" class="form-control" v-model="MOVE_RATE" v-on="input:updateConfig">
+              </div>
+              <div class="form-group">
+                <label>MOBILE_RATE:</label> {{ MOBILE_RATE }}%
+                <input type="range" min="0" max="100" class="form-control" v-model="MOBILE_RATE" v-on="input:updateConfig">
+              </div>
+
+            </div>
+            <div v-if="tabId === 'tab3'">
+
+              <div class="form-group">
+                <label>URL:</label>
+                  <input v-model="url" class="form-control">
+                </label>
+              </div>
+              <textarea v-model="json" rows=20 class="form-control"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-5">
+        <canvas id="frame"></canvas>
+      </div>
     </div>
   </div>
   <script src="./assets/vue.min.js"></script>

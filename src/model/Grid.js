@@ -1,11 +1,17 @@
-import { SUGAR_INIT, SUGAR_RECOVERY_NUM } from "./config";
 import { ofRandomInt } from "./of";
 
 export default class Grid {
   constructor(model, index) {
     this.model = model;
     this.index = index;
-    this.resource = ofRandomInt(SUGAR_INIT + 1);
+    this.resource = ofRandomInt(this.model.SUGAR_INIT + 1);
+  }
+
+  toJSON() {
+    return {
+      index: this.index,
+      resource: this.resource
+    };
   }
 
   decrease(num) {
@@ -13,6 +19,6 @@ export default class Grid {
   }
 
   recovery() {
-    this.resource = Math.min(this.resource + SUGAR_RECOVERY_NUM, SUGAR_INIT);
+    this.resource = Math.min(this.resource + this.model.SUGAR_RECOVERY_NUM, this.model.SUGAR_INIT);
   }
 }

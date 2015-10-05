@@ -1,20 +1,19 @@
 // System
-const RESET_INTERVAL = 120;
-const CLOCK_INTERVAL = 1.5;
+const RESET_INTERVAL = 300;
+const CLOCK_INTERVAL = 1;
 const CLOCK_INCREASING_FIX = 1.8;
 const GRID_NUM_INIT = 9;
 const ANT_NUM_INIT = 1;
 
 // GRID Richness
-const SUGAR_INIT = 32;
-const SUGAR_RECOVERY_NUM = 5;
+const SUGAR_INIT = 256;
+const SUGAR_RECOVERY_NUM = 4;
 
 // ANT PARAM
-const VIEW_WIDTH = 3;
-const VIEW_INIT = 1;
+const VIEW_WIDTH = 2;
 const POOL_INIT = 4;
-const TAKE_INIT = 9;
-const APPETITE_INIT = 5;
+const TAKE_INIT = 6;
+const APPETITE_INIT = 1;
 const MOVE_RATE = 0.7;
 const MOBILE_RATE = 0.2;
 
@@ -31,7 +30,6 @@ export default {
   SUGAR_INIT,
   SUGAR_RECOVERY_NUM,
   VIEW_WIDTH,
-  VIEW_INIT,
   POOL_INIT,
   TAKE_INIT,
   APPETITE_INIT,
