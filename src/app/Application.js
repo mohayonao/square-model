@@ -1,35 +1,90 @@
-import appendIfNotExists from "@mohayonao/utils/appendIfNotExists";
-import removeIfExists from "@mohayonao/utils/removeIfExists";
-import sample from "@mohayonao/utils/sample";
 import Timeline from "@mohayonao/timeline";
 import WorkerTimer from "worker-timer";
-import { RESET_INTERVAL, CLOCK_INTERVAL } from "../model/config";
-import ModelView from "./ModelView";
 import Model from "../model/Model";
+import FrameViewer from "./FrameViewer";
+import ModelViewer from "./ModelViewer";
+import RelaySound from "./RelaySound";
+import rand2 from "@mohayonao/utils/rand2";
 
 export default class App {
   constructor(audioContext) {
+    let frameCanvas = document.getElementById("frame");
+
+    frameCanvas.width = frameCanvas.clientWidth;
+    frameCanvas.height = frameCanvas.clientHeight;
+    this.frameViewer = new FrameViewer(frameCanvas);
+
     this.audioContext = audioContext;
-    this.modelView = new ModelView(this.audioContext, null);
     this.isPlaying = false;
     this.startTime = 0;
     this.timeline = new Timeline({ context: this.audioContext, timerAPI: WorkerTimer });
+
+    this.state = {
+      relays: true,
+      mobile: true,
+      antiQuantize: true
+    };
+
     this.$onProcess = this.$onProcess.bind(this);
   }
 
-  addMobile() {
+  setState(state) {
+    this.state = state;
   }
 
-  removeMobile() {
+  setConfig(config) {
+    this.config = {
+      ITER_COUNT: config.ITER_COUNT,
+      SUGAR_INIT: config.SUGAR_INIT,
+      SUGAR_RECOVERY_NUM: config.SUGAR_RECOVERY_NUM,
+      VIEW_WIDTH: config.VIEW_WIDTH,
+      POOL_INIT: config.POOL_INIT,
+      TAKE_INIT: config.TAKE_INIT,
+      APPETITE_INIT: config.APPETITE_INIT,
+      BORN_LINE_OF_POOL: config.BORN_LINE_OF_POOL,
+      MOVE_RATE: config.MOVE_RATE,
+      MOBILE_RATE: config.MOBILE_RATE
+    };
+    this.model = new Model(this.config);
+    this.frames = this.model.build(this.config.ITER_COUNT);
+
+    let interval = 5;
+    let time = 0;
+    let decreaseInterval = 0.05;
+    let minInterval = 0.25;
+
+    this.frames.forEach((frame, index) => {
+      frame.time = time + rand2(0.25, () => (Math.random() + Math.random()) / 2);
+      frame.index = index;
+
+      time += interval;
+      interval = Math.max(interval - decreaseInterval, minInterval);
+    });
+
+    this.frameViewer.draw(this.frames, this.model);
   }
 
   start() {
-    if (this.isPlaying) {
+    if (this.isPlaying || !this.frames) {
       return;
     }
-    this.modelView.model = new Model();
     this.isPlaying = true;
-    this.startTime = Date.now();
+
+    let modelCanvas = document.getElementById("model");
+
+    modelCanvas.width = modelCanvas.clientWidth;
+    modelCanvas.height = modelCanvas.clientHeight;
+    this.modelViewer = new ModelViewer(modelCanvas);
+
+    this.startTime = this.timeline.currentTime + 1;
+    this.events = [];
+
+    this.frames.forEach((frame) => {
+      let playbackTime = this.startTime + frame.time;
+
+      this.events.push({ playbackTime, frame });
+    });
+
     this.timeline.start(this.$onProcess);
   }
 
@@ -37,19 +92,67 @@ export default class App {
     this.isPlaying = false;
   }
 
-  $onProcess({ playbackTime }) {
-    let elapsed = (Date.now() - this.startTime) * 0.001;
+  renewEvents() {
+    this.setConfig(this.config);
 
-    if (RESET_INTERVAL <= elapsed) {
-      this.modelView.model = new Model();
-      this.startTime = Date.now();
-      console.log("reset");
+    this.startTime = this.timeline.currentTime + 1;
+    this.events = [];
+
+    this.frames.forEach((frame) => {
+      let playbackTime = this.startTime + frame.time;
+
+      this.events.push({ playbackTime, frame });
+    });
+  }
+
+  $onProcess({ playbackTime }) {
+    let time = playbackTime - this.startTime;
+
+    if (0 < time) {
+      this.frameViewer.revert();
+      this.frameViewer.drawFrameSeek(time);
+      this.modelViewer.draw(time);
+
+      while (this.events.length && this.events[0].playbackTime < playbackTime) {
+        let frame = this.events.shift().frame;
+
+        this.modelViewer.update(frame, this.model);
+
+        frame.ants.filter(ant => ant.updated).forEach((ant) => {
+          let t0 = playbackTime;
+
+          if (this.state.antiQuantize) {
+            t0 += Math.random() * 0.5;
+          }
+
+          if (ant.mobile) {
+            if (this.state.mobile) {
+              let sound = new RelaySound(this.audioContext, ant.position);
+
+              sound.start(t0);
+              sound.outlet.connect(this.audioContext.destination);
+            }
+          }
+          if (!ant.mobile) {
+            this.modelViewer.bang(ant.position);
+
+            if (this.state.relays) {
+              let sound = new RelaySound(this.audioContext, ant.position);
+
+              sound.start(t0);
+              sound.outlet.connect(this.audioContext.destination);
+            }
+          }
+        });
+      }
     }
 
-    this.modelView.update(this.audioContext.currentTime);
+    if (this.events.length === 0) {
+      this.renewEvents();
+    }
 
     if (this.isPlaying) {
-      this.timeline.insert(playbackTime + CLOCK_INTERVAL, this.$onProcess);
+      this.timeline.insert(playbackTime + 0.05, this.$onProcess);
     }
   }
 }

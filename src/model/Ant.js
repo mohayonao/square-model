@@ -1,29 +1,49 @@
 import sample from "@mohayonao/utils/sample";
 import { ofRandomInt } from "./of";
-import { VIEW_WIDTH, VIEW_INIT, TAKE_INIT, APPETITE_INIT, POOL_INIT, MOVE_RATE, MOBILE_RATE } from "./config";
 
 export default class Ant {
   constructor(model) {
-    this.death = false;
-    this.view = VIEW_INIT;
-    this.take = TAKE_INIT;
-    this.appetite = APPETITE_INIT;
-    this.pool = POOL_INIT;
-
     this.model = model;
+
+    this.death = false;
+    this.take = this.model.TAKE_INIT;
+    this.appetite = this.model.APPETITE_INIT;
+    this.pool = this.model.POOL_INIT;
+
     this.position = ofRandomInt(this.model.grids.length - 1);
     this.updated = false;
     this.mobile = false;
   }
 
+  toJSON() {
+    return {
+      death: this.death,
+      take: this.take,
+      appetite: this.appetite,
+      pool: this.pool,
+      position: this.position,
+      updated: this.updated,
+      mobile: this.mobile
+    };
+  }
+
   move() {
-    if (!(Math.random() < MOVE_RATE)) {
+    let hungerRate = this.pool / this.model.BORN_LINE_OF_POOL;
+    let moveRate = this.model.MOVE_RATE * hungerRate;
+
+    if (!(Math.random() < moveRate)) {
+      return;
+    }
+
+    if (Math.random() < this.model.MOBILE_RATE) {
+      this.mobile = true;
+      this.updated = true;
       return;
     }
 
     let grids = this.model.grids.filter((grid, index) => {
-      let minPosition = this.position - VIEW_WIDTH;
-      let maxPosition = this.position + VIEW_WIDTH;
+      let minPosition = this.position - this.model.VIEW_WIDTH;
+      let maxPosition = this.position + this.model.VIEW_WIDTH;
 
       return minPosition <= index && index <= maxPosition;
     });
@@ -35,9 +55,6 @@ export default class Ant {
       if (position !== this.position) {
         this.position = position;
         this.updated = true;
-        if (Math.random() < MOBILE_RATE) {
-          this.mobile = true;
-        }
       }
     }
   }

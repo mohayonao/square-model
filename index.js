@@ -313,16 +313,8 @@ var _Timeline2 = _interopRequireDefault(_Timeline);
 exports["default"] = _Timeline2["default"];
 module.exports = exports["default"];
 },{"./Timeline":3}],6:[function(require,module,exports){
-module.exports = function(array, target) {
-  var index = array.indexOf(target);
-
-  if (index !== -1) {
-    return false;
-  }
-
-  array.push(target);
-
-  return true;
+module.exports = function(value, minValue, maxValue) {
+  return Math.max(minValue, Math.min(value, maxValue));
 };
 
 },{}],7:[function(require,module,exports){
@@ -336,6 +328,13 @@ module.exports = function(value, inMin, inMax, outMin, outMax) {
 };
 
 },{}],9:[function(require,module,exports){
+module.exports = function(value, rand) {
+  rand = rand || Math.random;
+
+  return (rand() * 2 - 1) * value;
+};
+
+},{}],10:[function(require,module,exports){
 module.exports = function(start, stop, step) {
   var length, result;
   var i;
@@ -355,19 +354,6 @@ module.exports = function(start, stop, step) {
   }
 
   return result;
-};
-
-},{}],10:[function(require,module,exports){
-module.exports = function(array, target) {
-  var index = array.indexOf(target);
-
-  if (index === -1) {
-    return false;
-  }
-
-  array.splice(index, 1);
-
-  return true;
 };
 
 },{}],11:[function(require,module,exports){
@@ -561,18 +547,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "d
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var _mohayonaoUtilsAppendIfNotExists = require("@mohayonao/utils/appendIfNotExists");
-
-var _mohayonaoUtilsAppendIfNotExists2 = _interopRequireDefault(_mohayonaoUtilsAppendIfNotExists);
-
-var _mohayonaoUtilsRemoveIfExists = require("@mohayonao/utils/removeIfExists");
-
-var _mohayonaoUtilsRemoveIfExists2 = _interopRequireDefault(_mohayonaoUtilsRemoveIfExists);
-
-var _mohayonaoUtilsSample = require("@mohayonao/utils/sample");
-
-var _mohayonaoUtilsSample2 = _interopRequireDefault(_mohayonaoUtilsSample);
-
 var _mohayonaoTimeline = require("@mohayonao/timeline");
 
 var _mohayonaoTimeline2 = _interopRequireDefault(_mohayonaoTimeline);
@@ -581,43 +555,115 @@ var _workerTimer = require("worker-timer");
 
 var _workerTimer2 = _interopRequireDefault(_workerTimer);
 
-var _modelConfig = require("../model/config");
-
-var _ModelView = require("./ModelView");
-
-var _ModelView2 = _interopRequireDefault(_ModelView);
-
 var _modelModel = require("../model/Model");
 
 var _modelModel2 = _interopRequireDefault(_modelModel);
+
+var _FrameViewer = require("./FrameViewer");
+
+var _FrameViewer2 = _interopRequireDefault(_FrameViewer);
+
+var _ModelViewer = require("./ModelViewer");
+
+var _ModelViewer2 = _interopRequireDefault(_ModelViewer);
+
+var _RelaySound = require("./RelaySound");
+
+var _RelaySound2 = _interopRequireDefault(_RelaySound);
+
+var _mohayonaoUtilsRand2 = require("@mohayonao/utils/rand2");
+
+var _mohayonaoUtilsRand22 = _interopRequireDefault(_mohayonaoUtilsRand2);
 
 var App = (function () {
   function App(audioContext) {
     _classCallCheck(this, App);
 
+    var frameCanvas = document.getElementById("frame");
+
+    frameCanvas.width = frameCanvas.clientWidth;
+    frameCanvas.height = frameCanvas.clientHeight;
+    this.frameViewer = new _FrameViewer2["default"](frameCanvas);
+
     this.audioContext = audioContext;
-    this.modelView = new _ModelView2["default"](this.audioContext, null);
     this.isPlaying = false;
     this.startTime = 0;
     this.timeline = new _mohayonaoTimeline2["default"]({ context: this.audioContext, timerAPI: _workerTimer2["default"] });
+
+    this.state = {
+      relays: true,
+      mobile: true,
+      antiQuantize: true
+    };
+
     this.$onProcess = this.$onProcess.bind(this);
   }
 
   _createClass(App, [{
-    key: "addMobile",
-    value: function addMobile() {}
+    key: "setState",
+    value: function setState(state) {
+      this.state = state;
+    }
   }, {
-    key: "removeMobile",
-    value: function removeMobile() {}
+    key: "setConfig",
+    value: function setConfig(config) {
+      this.config = {
+        ITER_COUNT: config.ITER_COUNT,
+        SUGAR_INIT: config.SUGAR_INIT,
+        SUGAR_RECOVERY_NUM: config.SUGAR_RECOVERY_NUM,
+        VIEW_WIDTH: config.VIEW_WIDTH,
+        POOL_INIT: config.POOL_INIT,
+        TAKE_INIT: config.TAKE_INIT,
+        APPETITE_INIT: config.APPETITE_INIT,
+        BORN_LINE_OF_POOL: config.BORN_LINE_OF_POOL,
+        MOVE_RATE: config.MOVE_RATE,
+        MOBILE_RATE: config.MOBILE_RATE
+      };
+      this.model = new _modelModel2["default"](this.config);
+      this.frames = this.model.build(this.config.ITER_COUNT);
+
+      var interval = 5;
+      var time = 0;
+      var decreaseInterval = 0.05;
+      var minInterval = 0.25;
+
+      this.frames.forEach(function (frame, index) {
+        frame.time = time + (0, _mohayonaoUtilsRand22["default"])(0.25, function () {
+          return (Math.random() + Math.random()) / 2;
+        });
+        frame.index = index;
+
+        time += interval;
+        interval = Math.max(interval - decreaseInterval, minInterval);
+      });
+
+      this.frameViewer.draw(this.frames, this.model);
+    }
   }, {
     key: "start",
     value: function start() {
-      if (this.isPlaying) {
+      var _this = this;
+
+      if (this.isPlaying || !this.frames) {
         return;
       }
-      this.modelView.model = new _modelModel2["default"]();
       this.isPlaying = true;
-      this.startTime = Date.now();
+
+      var modelCanvas = document.getElementById("model");
+
+      modelCanvas.width = modelCanvas.clientWidth;
+      modelCanvas.height = modelCanvas.clientHeight;
+      this.modelViewer = new _ModelViewer2["default"](modelCanvas);
+
+      this.startTime = this.timeline.currentTime + 1;
+      this.events = [];
+
+      this.frames.forEach(function (frame) {
+        var playbackTime = _this.startTime + frame.time;
+
+        _this.events.push({ playbackTime: playbackTime, frame: frame });
+      });
+
       this.timeline.start(this.$onProcess);
     }
   }, {
@@ -626,22 +672,77 @@ var App = (function () {
       this.isPlaying = false;
     }
   }, {
+    key: "renewEvents",
+    value: function renewEvents() {
+      var _this2 = this;
+
+      this.setConfig(this.config);
+
+      this.startTime = this.timeline.currentTime + 1;
+      this.events = [];
+
+      this.frames.forEach(function (frame) {
+        var playbackTime = _this2.startTime + frame.time;
+
+        _this2.events.push({ playbackTime: playbackTime, frame: frame });
+      });
+    }
+  }, {
     key: "$onProcess",
     value: function $onProcess(_ref) {
+      var _this3 = this;
+
       var playbackTime = _ref.playbackTime;
 
-      var elapsed = (Date.now() - this.startTime) * 0.001;
+      var time = playbackTime - this.startTime;
 
-      if (_modelConfig.RESET_INTERVAL <= elapsed) {
-        this.modelView.model = new _modelModel2["default"]();
-        this.startTime = Date.now();
-        console.log("reset");
+      if (0 < time) {
+        this.frameViewer.revert();
+        this.frameViewer.drawFrameSeek(time);
+        this.modelViewer.draw(time);
+
+        while (this.events.length && this.events[0].playbackTime < playbackTime) {
+          var frame = this.events.shift().frame;
+
+          this.modelViewer.update(frame, this.model);
+
+          frame.ants.filter(function (ant) {
+            return ant.updated;
+          }).forEach(function (ant) {
+            var t0 = playbackTime;
+
+            if (_this3.state.antiQuantize) {
+              t0 += Math.random() * 0.5;
+            }
+
+            if (ant.mobile) {
+              if (_this3.state.mobile) {
+                var sound = new _RelaySound2["default"](_this3.audioContext, ant.position);
+
+                sound.start(t0);
+                sound.outlet.connect(_this3.audioContext.destination);
+              }
+            }
+            if (!ant.mobile) {
+              _this3.modelViewer.bang(ant.position);
+
+              if (_this3.state.relays) {
+                var sound = new _RelaySound2["default"](_this3.audioContext, ant.position);
+
+                sound.start(t0);
+                sound.outlet.connect(_this3.audioContext.destination);
+              }
+            }
+          });
+        }
       }
 
-      this.modelView.update(this.audioContext.currentTime);
+      if (this.events.length === 0) {
+        this.renewEvents();
+      }
 
       if (this.isPlaying) {
-        this.timeline.insert(playbackTime + _modelConfig.CLOCK_INTERVAL, this.$onProcess);
+        this.timeline.insert(playbackTime + 0.05, this.$onProcess);
       }
     }
   }]);
@@ -652,7 +753,7 @@ var App = (function () {
 exports["default"] = App;
 module.exports = exports["default"];
 
-},{"../model/Model":24,"../model/config":25,"./ModelView":17,"@mohayonao/timeline":2,"@mohayonao/utils/appendIfNotExists":6,"@mohayonao/utils/removeIfExists":10,"@mohayonao/utils/sample":11,"worker-timer":15}],17:[function(require,module,exports){
+},{"../model/Model":24,"./FrameViewer":17,"./ModelViewer":18,"./RelaySound":19,"@mohayonao/timeline":2,"@mohayonao/utils/rand2":9,"worker-timer":15}],17:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -661,106 +762,306 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
-var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+var _mohayonaoUtilsLinlin = require("@mohayonao/utils/linlin");
 
-var _mohayonaoEventEmitter = require("@mohayonao/event-emitter");
+var _mohayonaoUtilsLinlin2 = _interopRequireDefault(_mohayonaoUtilsLinlin);
 
-var _mohayonaoEventEmitter2 = _interopRequireDefault(_mohayonaoEventEmitter);
+var _mohayonaoUtilsRange = require("@mohayonao/utils/range");
 
-var _mohayonaoUtilsAppendIfNotExists = require("@mohayonao/utils/appendIfNotExists");
+var _mohayonaoUtilsRange2 = _interopRequireDefault(_mohayonaoUtilsRange);
 
-var _mohayonaoUtilsAppendIfNotExists2 = _interopRequireDefault(_mohayonaoUtilsAppendIfNotExists);
+var FrameViewer = (function () {
+  function FrameViewer(canvas) {
+    _classCallCheck(this, FrameViewer);
 
-var _mohayonaoUtilsRemoveIfExists = require("@mohayonao/utils/removeIfExists");
-
-var _mohayonaoUtilsRemoveIfExists2 = _interopRequireDefault(_mohayonaoUtilsRemoveIfExists);
-
-var _Viewer = require("./Viewer");
-
-var _Viewer2 = _interopRequireDefault(_Viewer);
-
-var _RelaySound = require("./RelaySound");
-
-var _RelaySound2 = _interopRequireDefault(_RelaySound);
-
-var _modelConfig = require("../model/config");
-
-var GCGuard = [];
-
-var ModelView = (function (_EventEmitter) {
-  _inherits(ModelView, _EventEmitter);
-
-  function ModelView(audioContext, model) {
-    var _this = this;
-
-    _classCallCheck(this, ModelView);
-
-    _get(Object.getPrototypeOf(ModelView.prototype), "constructor", this).call(this);
-
-    this.audioContext = audioContext;
-    this.tick = 0;
-    this.playbackTime = 0;
-    this.model = model;
-    this.viewer = new _Viewer2["default"](this);
-
-    document.getElementById("models").appendChild(this.viewer.canvas);
-
-    this.viewer.canvas.addEventListener("dblclick", function () {
-      _this.emit("remove");
-    });
+    this.canvas = canvas;
+    this.imageData = null;
+    this.frameLength = 0;
+    this.duration = 0;
   }
 
-  _createClass(ModelView, [{
-    key: "dispose",
-    value: function dispose() {
-      document.getElementById("models").removeChild(this.viewer.canvas);
+  _createClass(FrameViewer, [{
+    key: "draw",
+    value: function draw(frames, model) {
+      var canvas = this.canvas;
+      var context = canvas.getContext("2d");
+
+      context.fillStyle = "#000";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+
+      this.duration = frames[frames.length - 1].time;
+      this.drawFrames(canvas, context, frames, model);
+
+      this.imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+      this.frameLength = frames.length;
     }
   }, {
-    key: "update",
-    value: function update(playbackTime) {
-      var _this2 = this;
+    key: "revert",
+    value: function revert() {
+      if (this.imageData === null) {
+        return;
+      }
+      var canvas = this.canvas;
+      var context = canvas.getContext("2d");
 
-      var phaseTime = _modelConfig.CLOCK_INTERVAL / this.model.ants.length;
+      context.putImageData(this.imageData, 0, 0);
+    }
+  }, {
+    key: "drawFrameSeek",
+    value: function drawFrameSeek(time) {
+      var canvas = this.canvas;
+      var context = canvas.getContext("2d");
+      var y0 = time / this.duration * canvas.height;
 
-      this.model.update();
-      this.viewer.update();
-      this.model.ants.forEach(function (ant, index) {
-        if (ant.updated && !ant.mobile) {
-          (function () {
-            var grid = _this2.model.grids[ant.position];
-            var relay = new _RelaySound2["default"](_this2.audioContext, grid.index);
-            var soundPlaybackTime = playbackTime;
+      context.strokeStyle = "#f00";
+      context.beginPath();
+      context.moveTo(0, y0);
+      context.lineTo(canvas.width, y0);
+      context.stroke();
+    }
+  }, {
+    key: "drawFrames",
+    value: function drawFrames(canvas, context, frames, model) {
+      var _this = this;
 
-            soundPlaybackTime += phaseTime * index;
+      var dy = canvas.height / frames.length;
+      var dx = 15;
 
-            relay.start(soundPlaybackTime);
-            relay.on("ended", function () {
-              relay.outlet.disconnect();
-              relay.dispose();
-              (0, _mohayonaoUtilsRemoveIfExists2["default"])(GCGuard, relay);
-            });
-            (0, _mohayonaoUtilsAppendIfNotExists2["default"])(GCGuard, relay);
+      frames.forEach(function (_ref, i) {
+        var time = _ref.time;
+        var grids = _ref.grids;
+        var ants = _ref.ants;
 
-            relay.outlet.connect(_this2.audioContext.destination);
-          })();
+        var y0 = time / _this.duration * canvas.height;
+
+        if (i % 25 === 0) {
+          context.fillStyle = "#fff";
+          context.fillText(time | 0, 2, y0 + 10);
+        }
+
+        grids.forEach(function (_ref2, j) {
+          var resource = _ref2.resource;
+
+          var x0 = j * dx;
+          var gray = (0, _mohayonaoUtilsLinlin2["default"])(resource, 0, model.SUGAR_INIT, 224, 0) | 0;
+
+          context.fillStyle = toColor(gray, gray, gray);
+          context.fillRect(25 + x0, y0, dx, canvas.height - y0);
+        });
+
+        var relaySounds = (0, _mohayonaoUtilsRange2["default"])(grids.length).map(function () {
+          return 0;
+        });
+
+        ants.filter(function (ant) {
+          return ant.updated && !ant.mobile;
+        }).forEach(function (_ref3) {
+          var position = _ref3.position;
+
+          relaySounds[position] += 1;
+        });
+
+        context.fillStyle = "rgba(255, 255, 255, 0.8)";
+
+        relaySounds.forEach(function (count, position) {
+          var x0 = position * dx;
+          var r = count;
+
+          context.beginPath();
+          context.arc(175 + x0 + dx * 0.5, y0 + dy * 0.5, r, 0, 2 * Math.PI, false);
+          context.fill();
+        });
+
+        var mobileCount = ants.filter(function (ant) {
+          return ant.mobile;
+        }).length;
+        var r = mobileCount;
+
+        context.fillStyle = "rgba(24, 255, 192, 0.8)";
+
+        context.beginPath();
+        context.arc(325 + dx * 0.5, y0 + dy * 0.5, r, 0, 2 * Math.PI, false);
+        context.fill();
+
+        if (i % 25 === 0) {
+          context.fillStyle = "#fff";
+          context.fillText(ants.length, 350, y0 + 10);
+        }
+        if (i === frames.length - 1) {
+          context.fillStyle = "#fff";
+          context.fillText(ants.length, 350, y0);
         }
       });
     }
   }]);
 
-  return ModelView;
-})(_mohayonaoEventEmitter2["default"]);
+  return FrameViewer;
+})();
 
-exports["default"] = ModelView;
+exports["default"] = FrameViewer;
+
+function toColor(r, g, b) {
+  return "#" + [r, g, b].map(function (x) {
+    return ("00" + (x | 0).toString(16)).substr(-2);
+  }).join("");
+}
 module.exports = exports["default"];
 
-},{"../model/config":25,"./RelaySound":18,"./Viewer":19,"@mohayonao/event-emitter":1,"@mohayonao/utils/appendIfNotExists":6,"@mohayonao/utils/removeIfExists":10}],18:[function(require,module,exports){
+},{"@mohayonao/utils/linlin":8,"@mohayonao/utils/range":10}],18:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var _mohayonaoUtilsLinlin = require("@mohayonao/utils/linlin");
+
+var _mohayonaoUtilsLinlin2 = _interopRequireDefault(_mohayonaoUtilsLinlin);
+
+var _mohayonaoUtilsRand2 = require("@mohayonao/utils/rand2");
+
+var _mohayonaoUtilsRand22 = _interopRequireDefault(_mohayonaoUtilsRand2);
+
+var _mohayonaoUtilsConstrain = require("@mohayonao/utils/constrain");
+
+var _mohayonaoUtilsConstrain2 = _interopRequireDefault(_mohayonaoUtilsConstrain);
+
+var ModelViewer = (function () {
+  function ModelViewer(canvas) {
+    _classCallCheck(this, ModelViewer);
+
+    this.canvas = canvas;
+    this.real = new Float32Array(9);
+    this.imag = new Float32Array(9);
+    this.resources = new Uint16Array(9);
+  }
+
+  _createClass(ModelViewer, [{
+    key: "draw",
+    value: function draw(time) {
+      var canvas = this.canvas;
+      var context = canvas.getContext("2d");
+      var msec = Math.floor(time * 1000) % 1000;
+      var seconds = Math.floor(time) % 60;
+      var minutes = Math.floor(time / 60);
+
+      context.fillStyle = "#000";
+      context.fillRect(0, 0, canvas.width, 64);
+
+      context.fillStyle = "#fff";
+      context.fillText(zero2(minutes) + ":" + zero2(seconds) + "." + zero3(msec), 2, 12);
+
+      this.drawGrids(time, canvas, context);
+    }
+  }, {
+    key: "update",
+    value: function update(_ref, model) {
+      var _this = this;
+
+      var grids = _ref.grids;
+      var ants = _ref.ants;
+
+      var canvas = this.canvas;
+      var context = canvas.getContext("2d");
+
+      grids.forEach(function (grid, index) {
+        _this.real[index] = (1 - grid.resource / model.SUGAR_INIT) * 0.75;
+        _this.resources[index] = grid.resource;
+      });
+
+      this.drawAnts(canvas, context, ants, model);
+    }
+  }, {
+    key: "bang",
+    value: function bang(position) {
+      this.imag[position] = 1;
+    }
+  }, {
+    key: "drawGrids",
+    value: function drawGrids(time, canvas, context) {
+      var dx = canvas.width / this.real.length;
+      var dy = 48;
+      var r = Math.min(dx, dy) * 0.45;
+
+      for (var i = 0; i < this.real.length; i++) {
+        var x0 = i * dx;
+        var y0 = 16;
+        var diff = (this.real[i] - this.imag[i]) * 0.125;
+        var str = this.resources[i] | 0;
+        var mx = context.measureText(str).width * 0.5;
+        var fontColor = "#fff";
+
+        this.imag[i] += diff;
+
+        var z = this.imag[i];
+
+        z = (0, _mohayonaoUtilsConstrain2["default"])((0, _mohayonaoUtilsLinlin2["default"])(z, 0, 1, 8, 255) + (0, _mohayonaoUtilsRand22["default"])(8), 0, 255);
+
+        context.fillStyle = toColor(z, z * 0.75, z * 0.1);
+        context.beginPath();
+        context.arc(x0 + dx * 0.5, y0 + dy * 0.5, r, 0, Math.PI * 2, false);
+        context.fill();
+
+        context.fillStyle = fontColor;
+        context.fillText(str, x0 + dx * 0.5 - mx, y0 + 26);
+      }
+    }
+  }, {
+    key: "drawAnts",
+    value: function drawAnts(canvas, context, ants, model) {
+      context.fillStyle = "#000";
+      context.fillRect(0, 64, canvas.width, canvas.height);
+
+      ants.forEach(function (ant, index) {
+        var dx = canvas.width / model.grids.length;
+        var dy = (canvas.height - 64) / ants.length;
+        var x0 = dx * ant.position;
+        var y0 = dy * index + 64;
+        var str = "" + (ant.pool | 0);
+        var mx = context.measureText(str).width * 0.5;
+
+        if (ant.mobile) {
+          context.fillStyle = "#ff6666";
+        } else {
+          context.fillStyle = "#ffffff";
+        }
+
+        context.fillText(str, x0 + dx * 0.5 - mx, y0 + dy * 0.5);
+      });
+    }
+  }]);
+
+  return ModelViewer;
+})();
+
+exports["default"] = ModelViewer;
+
+function toColor(r, g, b) {
+  return "#" + [r, g, b].map(function (x) {
+    return ("00" + (x | 0).toString(16)).substr(-2);
+  }).join("");
+}
+
+function zero2(num) {
+  return num < 10 ? "0" + num : num;
+}
+
+function zero3(num) {
+  return num < 100 ? "00" + num : zero2(num);
+}
+module.exports = exports["default"];
+
+},{"@mohayonao/utils/constrain":6,"@mohayonao/utils/linlin":8,"@mohayonao/utils/rand2":9}],19:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -830,102 +1131,7 @@ var RelaySound = (function (_EventEmitter) {
 exports["default"] = RelaySound;
 module.exports = exports["default"];
 
-},{"./sounds":21,"@mohayonao/event-emitter":1}],19:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var _mohayonaoUtilsLinlin = require("@mohayonao/utils/linlin");
-
-var _mohayonaoUtilsLinlin2 = _interopRequireDefault(_mohayonaoUtilsLinlin);
-
-var _modelConfig = require("../model/config");
-
-var Viewer = (function () {
-  function Viewer(modelView) {
-    _classCallCheck(this, Viewer);
-
-    this.modelView = modelView;
-    this.canvas = document.createElement("canvas");
-    this.canvas.width = 480;
-    this.canvas.height = 480;
-    this.context = this.canvas.getContext("2d");
-    this.context.font = "400 12px 'Courier', monospace";
-  }
-
-  _createClass(Viewer, [{
-    key: "update",
-    value: function update() {
-      var modelView = this.modelView;
-      var canvas = this.canvas;
-      var context = this.context;
-      var model = modelView.model;
-
-      context.fillStyle = "#000";
-      context.fillRect(0, 0, canvas.width, canvas.height);
-
-      // draw grid
-      model.grids.forEach(function (grid, index) {
-        var dx = canvas.width / model.grids.length;
-        var dy = 64;
-        var x0 = dx * index;
-        var y0 = 0;
-        var gray = (0, _mohayonaoUtilsLinlin2["default"])(grid.resource, 0, _modelConfig.SUGAR_INIT, 255, 32) | 0;
-        var str = "" + (grid.resource | 0);
-        var mx = context.measureText(str).width * 0.5;
-        var fontColor = "#000";
-
-        context.fillStyle = toColor(gray, gray, gray);
-        context.fillRect(x0, y0, dx, dy);
-
-        if (gray < 192) {
-          fontColor = "#fff";
-        }
-        context.fillStyle = fontColor;
-        context.fillText(str, x0 + dx * 0.5 - mx, y0 + dy * 0.5);
-      });
-
-      // draw ants
-      model.ants.forEach(function (ant, index) {
-        var dx = canvas.width / model.grids.length;
-        var dy = (canvas.height - 64) / model.ants.length;
-        var x0 = dx * ant.position;
-        var y0 = dy * index + 64;
-        var str = "" + (ant.pool | 0);
-        var mx = context.measureText(str).width * 0.5;
-
-        if (ant.mobile) {
-          context.fillStyle = "#ff6666";
-        } else {
-          context.fillStyle = "#ffffff";
-        }
-
-        context.fillText(str, x0 + dx * 0.5 - mx, y0 + dy * 0.5);
-      });
-    }
-  }]);
-
-  return Viewer;
-})();
-
-exports["default"] = Viewer;
-
-function toColor(r, g, b) {
-  return "#" + [r, g, b].map(function (x) {
-    return ("00" + x.toString(16)).substr(-2);
-  }).join("");
-}
-module.exports = exports["default"];
-
-},{"../model/config":25,"@mohayonao/utils/linlin":8}],20:[function(require,module,exports){
+},{"./sounds":21,"@mohayonao/event-emitter":1}],20:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -993,36 +1199,56 @@ var _mohayonaoUtilsSample2 = _interopRequireDefault(_mohayonaoUtilsSample);
 
 var _of = require("./of");
 
-var _config = require("./config");
-
 var Ant = (function () {
   function Ant(model) {
     _classCallCheck(this, Ant);
 
-    this.death = false;
-    this.view = _config.VIEW_INIT;
-    this.take = _config.TAKE_INIT;
-    this.appetite = _config.APPETITE_INIT;
-    this.pool = _config.POOL_INIT;
-
     this.model = model;
+
+    this.death = false;
+    this.take = this.model.TAKE_INIT;
+    this.appetite = this.model.APPETITE_INIT;
+    this.pool = this.model.POOL_INIT;
+
     this.position = (0, _of.ofRandomInt)(this.model.grids.length - 1);
     this.updated = false;
     this.mobile = false;
   }
 
   _createClass(Ant, [{
+    key: "toJSON",
+    value: function toJSON() {
+      return {
+        death: this.death,
+        take: this.take,
+        appetite: this.appetite,
+        pool: this.pool,
+        position: this.position,
+        updated: this.updated,
+        mobile: this.mobile
+      };
+    }
+  }, {
     key: "move",
     value: function move() {
       var _this = this;
 
-      if (!(Math.random() < _config.MOVE_RATE)) {
+      var hungerRate = this.pool / this.model.BORN_LINE_OF_POOL;
+      var moveRate = this.model.MOVE_RATE * hungerRate;
+
+      if (!(Math.random() < moveRate)) {
+        return;
+      }
+
+      if (Math.random() < this.model.MOBILE_RATE) {
+        this.mobile = true;
+        this.updated = true;
         return;
       }
 
       var grids = this.model.grids.filter(function (grid, index) {
-        var minPosition = _this.position - _config.VIEW_WIDTH;
-        var maxPosition = _this.position + _config.VIEW_WIDTH;
+        var minPosition = _this.position - _this.model.VIEW_WIDTH;
+        var maxPosition = _this.position + _this.model.VIEW_WIDTH;
 
         return minPosition <= index && index <= maxPosition;
       });
@@ -1038,9 +1264,6 @@ var Ant = (function () {
         if (position !== this.position) {
           this.position = position;
           this.updated = true;
-          if (Math.random() < _config.MOBILE_RATE) {
-            this.mobile = true;
-          }
         }
       }
     }
@@ -1062,7 +1285,7 @@ var Ant = (function () {
 exports["default"] = Ant;
 module.exports = exports["default"];
 
-},{"./config":25,"./of":26,"@mohayonao/utils/sample":11}],23:[function(require,module,exports){
+},{"./of":25,"@mohayonao/utils/sample":11}],23:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1073,20 +1296,24 @@ var _createClass = (function () { function defineProperties(target, props) { for
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var _config = require("./config");
-
-var _of = require("./of");
-
 var Grid = (function () {
   function Grid(model, index) {
     _classCallCheck(this, Grid);
 
     this.model = model;
     this.index = index;
-    this.resource = (0, _of.ofRandomInt)(_config.SUGAR_INIT + 1);
+    this.resource = this.model.SUGAR_INIT;
   }
 
   _createClass(Grid, [{
+    key: "toJSON",
+    value: function toJSON() {
+      return {
+        index: this.index,
+        resource: this.resource
+      };
+    }
+  }, {
     key: "decrease",
     value: function decrease(num) {
       this.resource = Math.max(0, this.resource - num);
@@ -1094,7 +1321,7 @@ var Grid = (function () {
   }, {
     key: "recovery",
     value: function recovery() {
-      this.resource = Math.min(this.resource + _config.SUGAR_RECOVERY_NUM, _config.SUGAR_INIT);
+      this.resource = Math.min(this.resource + this.model.SUGAR_RECOVERY_NUM, this.model.SUGAR_INIT);
     }
   }]);
 
@@ -1104,7 +1331,7 @@ var Grid = (function () {
 exports["default"] = Grid;
 module.exports = exports["default"];
 
-},{"./config":25,"./of":26}],24:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1121,7 +1348,9 @@ var _mohayonaoUtilsRange = require("@mohayonao/utils/range");
 
 var _mohayonaoUtilsRange2 = _interopRequireDefault(_mohayonaoUtilsRange);
 
-var _config = require("./config");
+var _mohayonaoUtilsDefaults = require("@mohayonao/utils/defaults");
+
+var _mohayonaoUtilsDefaults2 = _interopRequireDefault(_mohayonaoUtilsDefaults);
 
 var _Grid = require("./Grid");
 
@@ -1132,20 +1361,55 @@ var _Ant = require("./Ant");
 var _Ant2 = _interopRequireDefault(_Ant);
 
 var Model = (function () {
-  function Model() {
-    var _this = this;
-
+  function Model(params) {
     _classCallCheck(this, Model);
 
-    this.grids = (0, _mohayonaoUtilsRange2["default"])(_config.GRID_NUM_INIT).map(function (index) {
-      return new _Grid2["default"](_this, index);
-    });
-    this.ants = (0, _mohayonaoUtilsRange2["default"])(_config.ANT_NUM_INIT).map(function () {
-      return new _Ant2["default"](_this);
-    });
+    this.GRID_NUM_INIT = (0, _mohayonaoUtilsDefaults2["default"])(params.GRID_NUM_INIT, 9);
+    this.ANT_NUM_INIT = (0, _mohayonaoUtilsDefaults2["default"])(params.ANT_NUM_INIT, 1);
+    this.SUGAR_INIT = (0, _mohayonaoUtilsDefaults2["default"])(params.SUGAR_INIT, 256);
+    this.SUGAR_RECOVERY_NUM = (0, _mohayonaoUtilsDefaults2["default"])(params.SUGAR_RECOVERY_NUM, 4);
+    this.VIEW_WIDTH = (0, _mohayonaoUtilsDefaults2["default"])(params.VIEW_WIDTH, 2);
+    this.POOL_INIT = (0, _mohayonaoUtilsDefaults2["default"])(params.POOL_INIT, 2);
+    this.TAKE_INIT = (0, _mohayonaoUtilsDefaults2["default"])(params.TAKE_INIT, 6);
+    this.APPETITE_INIT = (0, _mohayonaoUtilsDefaults2["default"])(params.APPETITE_INIT, 1);
+    this.MOVE_RATE = (0, _mohayonaoUtilsDefaults2["default"])(params.MOVE_RATE, 0.7);
+    this.MOBILE_RATE = (0, _mohayonaoUtilsDefaults2["default"])(params.MOBILE_RATE, 0.2);
+    this.BORN_LINE_OF_POOL = (0, _mohayonaoUtilsDefaults2["default"])(params.BORN_LINE_OF_POOL, this.POOL_INIT * 100);
+    this.DEATH_LINE_OF_POOL = (0, _mohayonaoUtilsDefaults2["default"])(params.DEATH_LINE_OF_POOL, 0);
+    this.reset();
   }
 
   _createClass(Model, [{
+    key: "reset",
+    value: function reset() {
+      var _this = this;
+
+      this.grids = (0, _mohayonaoUtilsRange2["default"])(this.GRID_NUM_INIT).map(function (index) {
+        return new _Grid2["default"](_this, index);
+      });
+      this.ants = (0, _mohayonaoUtilsRange2["default"])(this.ANT_NUM_INIT).map(function () {
+        return new _Ant2["default"](_this);
+      });
+    }
+  }, {
+    key: "build",
+    value: function build(numOfFrames) {
+      var _this2 = this;
+
+      return (0, _mohayonaoUtilsRange2["default"])(numOfFrames).map(function () {
+        _this2.update();
+
+        var grids = _this2.grids.map(function (grid) {
+          return grid.toJSON();
+        });
+        var ants = _this2.ants.map(function (ant) {
+          return ant.toJSON();
+        });
+
+        return { grids: grids, ants: ants };
+      });
+    }
+  }, {
     key: "update",
     value: function update() {
       this.gridsRecovery();
@@ -1172,22 +1436,22 @@ var Model = (function () {
   }, {
     key: "bornAndDeath",
     value: function bornAndDeath() {
-      var _this2 = this;
+      var _this3 = this;
 
       this.ants.forEach(function (ant) {
-        if (ant.pool >= _config.BORN_LINE_OF_POOL) {
+        if (ant.pool >= _this3.BORN_LINE_OF_POOL) {
           // Decreases it's pool
           ant.pool >>= 1;
 
-          var a = new _Ant2["default"](_this2);
+          var a = new _Ant2["default"](_this3);
 
           a.pool = ant.pool;
-          _this2.ants.push(a);
+          _this3.ants.push(a);
 
           // Notification the born event to square for changing clock time
           // let num = this.ants.length;
           // notice.notify("BORN", num);
-        } else if (ant.pool <= _config.DEATH_LINE_OF_POOL) {
+        } else if (ant.pool <= _this3.DEATH_LINE_OF_POOL) {
             ant.death = true;
           }
       });
@@ -1209,57 +1473,7 @@ var Model = (function () {
 exports["default"] = Model;
 module.exports = exports["default"];
 
-},{"./Ant":22,"./Grid":23,"./config":25,"@mohayonao/utils/range":9}],25:[function(require,module,exports){
-// System
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-var RESET_INTERVAL = 120;
-var CLOCK_INTERVAL = 1.5;
-var CLOCK_INCREASING_FIX = 1.8;
-var GRID_NUM_INIT = 9;
-var ANT_NUM_INIT = 1;
-
-// GRID Richness
-var SUGAR_INIT = 32;
-var SUGAR_RECOVERY_NUM = 5;
-
-// ANT PARAM
-var VIEW_WIDTH = 3;
-var VIEW_INIT = 1;
-var POOL_INIT = 4;
-var TAKE_INIT = 9;
-var APPETITE_INIT = 5;
-var MOVE_RATE = 0.7;
-var MOBILE_RATE = 0.2;
-
-// Dead or Arrive
-var BORN_LINE_OF_POOL = POOL_INIT * 100;
-var DEATH_LINE_OF_POOL = 0;
-
-exports["default"] = {
-  RESET_INTERVAL: RESET_INTERVAL,
-  CLOCK_INTERVAL: CLOCK_INTERVAL,
-  CLOCK_INCREASING_FIX: CLOCK_INCREASING_FIX,
-  GRID_NUM_INIT: GRID_NUM_INIT,
-  ANT_NUM_INIT: ANT_NUM_INIT,
-  SUGAR_INIT: SUGAR_INIT,
-  SUGAR_RECOVERY_NUM: SUGAR_RECOVERY_NUM,
-  VIEW_WIDTH: VIEW_WIDTH,
-  VIEW_INIT: VIEW_INIT,
-  POOL_INIT: POOL_INIT,
-  TAKE_INIT: TAKE_INIT,
-  APPETITE_INIT: APPETITE_INIT,
-  MOVE_RATE: MOVE_RATE,
-  MOBILE_RATE: MOBILE_RATE,
-  BORN_LINE_OF_POOL: BORN_LINE_OF_POOL,
-  DEATH_LINE_OF_POOL: DEATH_LINE_OF_POOL
-};
-module.exports = exports["default"];
-
-},{}],26:[function(require,module,exports){
+},{"./Ant":22,"./Grid":23,"@mohayonao/utils/defaults":7,"@mohayonao/utils/range":10}],25:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1271,13 +1485,9 @@ function ofRandomInt(num) {
   return Math.random() * (num + 1) | 0;
 }
 
-},{}],27:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 (function (global){
 "use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
@@ -1289,65 +1499,104 @@ var _mohayonaoWebAudioUtilsEnableMobileAutoPlay = require("@mohayonao/web-audio-
 
 var _mohayonaoWebAudioUtilsEnableMobileAutoPlay2 = _interopRequireDefault(_mohayonaoWebAudioUtilsEnableMobileAutoPlay);
 
-var _modelModel = require("./model/Model");
-
-var _modelModel2 = _interopRequireDefault(_modelModel);
-
 var _app = require("./app");
 
 var _app2 = _interopRequireDefault(_app);
 
-var _appModelView = require("./app/ModelView");
-
-var _appModelView2 = _interopRequireDefault(_appModelView);
-
-global.onload = function () {
+global.addEventListener("DOMContentLoaded", function () {
   var audioContext = (0, _mohayonaoWebAudioUtilsGetAudioContext2["default"])();
   var app = new _app2["default"](audioContext);
 
   (0, _mohayonaoWebAudioUtilsEnableMobileAutoPlay2["default"])(audioContext);
 
-  var timerId = 0;
-  var startTime = 0;
   var vue = new global.Vue({
     el: "#app",
     data: {
       isPlaying: false,
-      elapsed: ""
+      tabId: "tab1",
+      ITER_COUNT: 300,
+      SUGAR_INIT: 256,
+      SUGAR_RECOVERY_NUM: 5,
+      VIEW_WIDTH: 2,
+      POOL_INIT: 4,
+      TAKE_INIT: 19,
+      APPETITE_INIT: 10,
+      BORN_LINE_OF_POOL: 300,
+      MOVE_RATE: 0.8,
+      MOBILE_RATE: 0.15,
+      relays: true,
+      mobile: true,
+      antiQuantize: true,
+      url: "",
+      json: ""
     },
     methods: {
-      soundOn: function soundOn() {
-        var _this = this;
+      updateConfig: function updateConfig() {
+        var json = this.toJSON();
 
+        app.setConfig(json);
+
+        this.url = location.origin + "/#" + encodeURIComponent(JSON.stringify(json));
+        this.json = JSON.stringify(json, null, 2);
+      },
+      updateState: function updateState() {
+        app.setState({
+          relays: this.relays,
+          mobile: this.mobile,
+          antiQuantize: this.antiQuantize
+        });
+      },
+      changeTab: function changeTab(tabId) {
+        this.tabId = tabId;
+      },
+      toJSON: function toJSON() {
+        return {
+          ITER_COUNT: this.ITER_COUNT,
+          SUGAR_INIT: this.SUGAR_INIT,
+          SUGAR_RECOVERY_NUM: this.SUGAR_RECOVERY_NUM,
+          VIEW_WIDTH: this.VIEW_WIDTH,
+          POOL_INIT: this.POOL_INIT,
+          TAKE_INIT: this.TAKE_INIT,
+          APPETITE_INIT: this.APPETITE_INIT,
+          BORN_LINE_OF_POOL: this.BORN_LINE_OF_POOL,
+          MOVE_RATE: this.MOVE_RATE,
+          MOBILE_RATE: this.MOBILE_RATE
+        };
+      },
+      start: function start() {
         this.isPlaying = !this.isPlaying;
+
         if (this.isPlaying) {
           app.start();
-          startTime = Date.now();
-          timerId = setInterval(function () {
-            var elapsed = Date.now() - startTime;
-            var msec = elapsed % 1000;
-            var seconds = Math.floor(elapsed / 1000) % 60;
-            var minutes = Math.floor(elapsed / 1000 / 60);
-
-            _this.elapsed = minutes + ":" + seconds + "." + msec;
-          }, 250);
         } else {
           app.stop();
-          clearInterval(timerId);
         }
-      },
-      addMobile: function addMobile() {
-        app.addMobile();
-      },
-      removeMobile: function removeMobile() {
-        app.removeMobile();
       }
     }
   });
-};
 
-exports["default"] = {};
-module.exports = exports["default"];
+  if (location.hash) {
+    (function () {
+      var hash = decodeURIComponent(location.hash.slice(1));
+      var json = undefined;
+
+      try {
+        json = JSON.parse(hash);
+      } catch (e) {
+        json = {};
+      }
+
+      Object.keys(json).forEach(function (key) {
+        if (vue.hasOwnProperty(key)) {
+          vue[key] = json[key];
+        }
+      });
+    })();
+  }
+
+  vue.updateConfig();
+  vue.updateState();
+});
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./app":20,"./app/ModelView":17,"./model/Model":24,"@mohayonao/web-audio-utils/enableMobileAutoPlay":12,"@mohayonao/web-audio-utils/getAudioContext":14}]},{},[27]);
+},{"./app":20,"@mohayonao/web-audio-utils/enableMobileAutoPlay":12,"@mohayonao/web-audio-utils/getAudioContext":14}]},{},[26]);
