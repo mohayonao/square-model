@@ -1,6 +1,6 @@
 {
   "name": "square-model",
-  "version": "0.0.4",
+  "version": "0.1.0",
   "dependencies": {
     "@mohayonao/event-emitter": "^1.0.1",
     "@mohayonao/timeline": "^0.3.0",
