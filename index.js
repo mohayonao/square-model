@@ -840,7 +840,7 @@ var FrameViewer = (function () {
 
         if (i % 25 === 0) {
           context.fillStyle = "#fff";
-          context.fillText(time | 0, 2, y0 + 10);
+          context.fillText(toTime(time), 2, y0 + 10);
         }
 
         grids.forEach(function (_ref2, j) {
@@ -903,6 +903,17 @@ var FrameViewer = (function () {
 })();
 
 exports["default"] = FrameViewer;
+
+function toTime(x) {
+  var minute = Math.floor(x / 60);
+  var second = Math.floor(x % 60);
+
+  if (second < 10) {
+    second = "0" + second;
+  }
+
+  return minute + ":" + second;
+}
 
 function toColor(r, g, b) {
   return "#" + [r, g, b].map(function (x) {

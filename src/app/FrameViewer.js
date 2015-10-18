@@ -54,7 +54,7 @@ export default class FrameViewer {
 
       if (i % 25 === 0) {
         context.fillStyle = "#fff";
-        context.fillText(time|0, 2, y0 + 10);
+        context.fillText(toTime(time), 2, y0 + 10);
       }
 
       grids.forEach(({ resource }, j) => {
@@ -101,6 +101,17 @@ export default class FrameViewer {
       }
     });
   }
+}
+
+function toTime(x) {
+  let minute = Math.floor(x / 60);
+  let second = Math.floor(x % 60);
+
+  if (second < 10) {
+    second = "0" + second;
+  }
+
+  return minute + ":" + second;
 }
 
 function toColor(r, g, b) {
