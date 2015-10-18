@@ -35,6 +35,7 @@ export default class App {
   setConfig(config) {
     this.config = {
       ITER_COUNT: config.ITER_COUNT,
+      ANT_NUM_INIT: config.ANT_NUM_INIT,
       SUGAR_INIT: config.SUGAR_INIT,
       SUGAR_RECOVERY_NUM: config.SUGAR_RECOVERY_NUM,
       VIEW_WIDTH: config.VIEW_WIDTH,
@@ -54,7 +55,7 @@ export default class App {
     let minInterval = 0.25;
 
     this.frames.forEach((frame, index) => {
-      frame.time = time + rand2(0.25, () => (Math.random() + Math.random()) / 2);
+      frame.time = time + rand2(interval * 0.75, () => (Math.random() + Math.random()) / 2);
       frame.index = index;
 
       time += interval;

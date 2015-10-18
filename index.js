@@ -609,6 +609,7 @@ var App = (function () {
     value: function setConfig(config) {
       this.config = {
         ITER_COUNT: config.ITER_COUNT,
+        ANT_NUM_INIT: config.ANT_NUM_INIT,
         SUGAR_INIT: config.SUGAR_INIT,
         SUGAR_RECOVERY_NUM: config.SUGAR_RECOVERY_NUM,
         VIEW_WIDTH: config.VIEW_WIDTH,
@@ -628,7 +629,7 @@ var App = (function () {
       var minInterval = 0.25;
 
       this.frames.forEach(function (frame, index) {
-        frame.time = time + (0, _mohayonaoUtilsRand22["default"])(0.25, function () {
+        frame.time = time + (0, _mohayonaoUtilsRand22["default"])(interval * 0.75, function () {
           return (Math.random() + Math.random()) / 2;
         });
         frame.index = index;
@@ -1525,7 +1526,8 @@ global.addEventListener("DOMContentLoaded", function () {
     data: {
       isPlaying: false,
       tabId: "tab1",
-      ITER_COUNT: 300,
+      ITER_COUNT: 400,
+      ANT_NUM_INIT: 1,
       SUGAR_INIT: 256,
       SUGAR_RECOVERY_NUM: 5,
       VIEW_WIDTH: 2,
@@ -1563,6 +1565,7 @@ global.addEventListener("DOMContentLoaded", function () {
       toJSON: function toJSON() {
         return {
           ITER_COUNT: this.ITER_COUNT,
+          ANT_NUM_INIT: this.ANT_NUM_INIT,
           SUGAR_INIT: this.SUGAR_INIT,
           SUGAR_RECOVERY_NUM: this.SUGAR_RECOVERY_NUM,
           VIEW_WIDTH: this.VIEW_WIDTH,

@@ -13,7 +13,8 @@ global.addEventListener("DOMContentLoaded", () => {
     data: {
       isPlaying: false,
       tabId: "tab1",
-      ITER_COUNT: 300,
+      ITER_COUNT: 400,
+      ANT_NUM_INIT: 1,
       SUGAR_INIT: 256,
       SUGAR_RECOVERY_NUM: 5,
       VIEW_WIDTH: 2,
@@ -51,6 +52,7 @@ global.addEventListener("DOMContentLoaded", () => {
       toJSON() {
         return {
           ITER_COUNT: this.ITER_COUNT,
+          ANT_NUM_INIT: this.ANT_NUM_INIT,
           SUGAR_INIT: this.SUGAR_INIT,
           SUGAR_RECOVERY_NUM: this.SUGAR_RECOVERY_NUM,
           VIEW_WIDTH: this.VIEW_WIDTH,
