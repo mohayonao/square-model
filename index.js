@@ -609,6 +609,9 @@ var App = (function () {
     value: function setConfig(config) {
       this.config = {
         ITER_COUNT: config.ITER_COUNT,
+        INIT_INTERVAL: config.INIT_INTERVAL,
+        DECREASE_INTERVAL: config.DECREASE_INTERVAL,
+        MIN_INTERVAL: config.MIN_INTERVAL,
         ANT_NUM_INIT: config.ANT_NUM_INIT,
         SUGAR_INIT: config.SUGAR_INIT,
         SUGAR_RECOVERY_NUM: config.SUGAR_RECOVERY_NUM,
@@ -623,18 +626,18 @@ var App = (function () {
       this.model = new _modelModel2["default"](this.config);
       this.frames = this.model.build(this.config.ITER_COUNT);
 
-      var interval = 5;
+      var interval = this.config.INIT_INTERVAL;
       var time = 0;
-      var decreaseInterval = 0.05;
-      var minInterval = 0.25;
+      var decreaseInterval = this.config.DECREASE_INTERVAL;
+      var minInterval = this.config.MIN_INTERVAL;
 
       this.frames.forEach(function (frame, index) {
-        frame.time = time + (0, _mohayonaoUtilsRand22["default"])(interval * 0.75, function () {
-          return (Math.random() + Math.random()) / 2;
-        });
+        frame.time = time;
         frame.index = index;
 
-        time += interval;
+        time += interval + (0, _mohayonaoUtilsRand22["default"])(interval * 0.8, function () {
+          return Math.random() * Math.random();
+        });
         interval = Math.max(interval - decreaseInterval, minInterval);
       });
 
@@ -877,9 +880,18 @@ var FrameViewer = (function () {
           context.fill();
         });
 
-        var mobileCount = ants.filter(function (ant) {
-          return ant.mobile;
-        }).length;
+        var mobileSets = [];
+
+        ants.forEach(function (_ref4) {
+          var mobile = _ref4.mobile;
+          var position = _ref4.position;
+
+          if (mobile && mobileSets.indexOf(position) === -1) {
+            mobileSets.push(position);
+          }
+        });
+
+        var mobileCount = mobileSets.length;
         var r = mobileCount;
 
         context.fillStyle = "rgba(24, 255, 192, 0.8)";
@@ -1527,16 +1539,20 @@ global.addEventListener("DOMContentLoaded", function () {
       isPlaying: false,
       tabId: "tab1",
       ITER_COUNT: 400,
+      INIT_INTERVAL: 4.5,
+      DECREASE_INTERVAL: 0.02,
+      MIN_INTERVAL: 0.3,
+      GRID_NUM_INIT: 9,
       ANT_NUM_INIT: 1,
       SUGAR_INIT: 256,
-      SUGAR_RECOVERY_NUM: 5,
-      VIEW_WIDTH: 2,
+      SUGAR_RECOVERY_NUM: 7,
+      VIEW_WIDTH: 3,
       POOL_INIT: 4,
-      TAKE_INIT: 19,
-      APPETITE_INIT: 10,
-      BORN_LINE_OF_POOL: 300,
+      TAKE_INIT: 15,
+      APPETITE_INIT: 8,
       MOVE_RATE: 0.8,
-      MOBILE_RATE: 0.15,
+      MOBILE_RATE: 0.05,
+      BORN_LINE_OF_POOL: 400,
       relays: true,
       mobile: true,
       antiQuantize: true,
@@ -1565,6 +1581,9 @@ global.addEventListener("DOMContentLoaded", function () {
       toJSON: function toJSON() {
         return {
           ITER_COUNT: this.ITER_COUNT,
+          INIT_INTERVAL: this.INIT_INTERVAL,
+          DECREASE_INTERVAL: this.DECREASE_INTERVAL,
+          MIN_INTERVAL: this.MIN_INTERVAL,
           ANT_NUM_INIT: this.ANT_NUM_INIT,
           SUGAR_INIT: this.SUGAR_INIT,
           SUGAR_RECOVERY_NUM: this.SUGAR_RECOVERY_NUM,

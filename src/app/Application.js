@@ -35,6 +35,9 @@ export default class App {
   setConfig(config) {
     this.config = {
       ITER_COUNT: config.ITER_COUNT,
+      INIT_INTERVAL: config.INIT_INTERVAL,
+      DECREASE_INTERVAL: config.DECREASE_INTERVAL,
+      MIN_INTERVAL: config.MIN_INTERVAL,
       ANT_NUM_INIT: config.ANT_NUM_INIT,
       SUGAR_INIT: config.SUGAR_INIT,
       SUGAR_RECOVERY_NUM: config.SUGAR_RECOVERY_NUM,
@@ -49,16 +52,16 @@ export default class App {
     this.model = new Model(this.config);
     this.frames = this.model.build(this.config.ITER_COUNT);
 
-    let interval = 5;
+    let interval = this.config.INIT_INTERVAL;
     let time = 0;
-    let decreaseInterval = 0.05;
-    let minInterval = 0.25;
+    let decreaseInterval = this.config.DECREASE_INTERVAL;
+    let minInterval = this.config.MIN_INTERVAL;
 
     this.frames.forEach((frame, index) => {
-      frame.time = time + rand2(interval * 0.75, () => (Math.random() + Math.random()) / 2);
+      frame.time = time
       frame.index = index;
 
-      time += interval;
+      time += interval + rand2(interval * 0.8, () => Math.random() * Math.random());
       interval = Math.max(interval - decreaseInterval, minInterval);
     });
 

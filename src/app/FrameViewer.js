@@ -82,7 +82,15 @@ export default class FrameViewer {
         context.fill();
       });
 
-      let mobileCount = ants.filter(ant => ant.mobile).length;
+      let mobileSets = [];
+
+      ants.forEach(({ mobile, position }) => {
+        if (mobile && mobileSets.indexOf(position) === -1) {
+          mobileSets.push(position);
+        }
+      });
+
+      let mobileCount = mobileSets.length;
       let r = mobileCount;
 
       context.fillStyle = "rgba(24, 255, 192, 0.8)";
